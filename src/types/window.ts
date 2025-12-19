@@ -80,6 +80,215 @@ export interface AppAPI {
 }
 
 /**
+ * OpenRouter Model
+ */
+export interface OpenRouterModel {
+  id: string;
+  name: string;
+  description?: string;
+  context_length: number;
+  pricing: {
+    prompt: string;
+    completion: string;
+  };
+  top_provider?: {
+    max_completion_tokens?: number;
+  };
+  architecture?: {
+    modality: string;
+    tokenizer: string;
+    instruct_type?: string;
+  };
+}
+
+/**
+ * Chat message for OpenRouter
+ */
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+/**
+ * Stream chunk data
+ */
+export interface StreamChunkData {
+  streamId: string;
+  content: string;
+  done: boolean;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  latency_ms?: number;
+  fullContent?: string;
+  error?: string;
+}
+
+/**
+ * OpenRouter API
+ */
+export interface OpenRouterAPI {
+  getModels: () => Promise<IPCResponse<OpenRouterModel[]>>;
+  clearModelsCache: () => Promise<IPCResponse<void>>;
+  startStream: (streamId: string, model: string, messages: ChatMessage[]) => Promise<IPCResponse<{ streamId: string }>>;
+  stopStream: (streamId: string) => Promise<IPCResponse<void>>;
+  onStreamChunk: (callback: (data: StreamChunkData) => void) => void;
+  removeStreamListeners: () => void;
+}
+
+/**
+ * Preset
+ */
+export interface Preset {
+  id: string;
+  name: string;
+  models: string;
+  created_at: number;
+  updated_at: number;
+}
+
+/**
+ * Presets API
+ */
+export interface PresetsAPI {
+  getAll: () => Promise<IPCResponse<Preset[]>>;
+  save: (id: string, name: string, models: string[]) => Promise<IPCResponse<void>>;
+  delete: (id: string) => Promise<IPCResponse<void>>;
+}
+
+/**
+ * Conversation
+ */
+export interface Conversation {
+  id: string;
+  title: string | null;
+  models: string;
+  created_at: number;
+  updated_at: number;
+}
+
+/**
+ * Message
+ */
+export interface Message {
+  id: string;
+  conversation_id: string;
+  role: string;
+  content: string;
+  model_id: string | null;
+  panel_index: number | null;
+  tokens_prompt: number | null;
+  tokens_completion: number | null;
+  latency_ms: number | null;
+  cost: number | null;
+  created_at: number;
+}
+
+/**
+ * Message data for adding
+ */
+export interface MessageData {
+  id: string;
+  conversation_id: string;
+  role: string;
+  content: string;
+  model_id?: string;
+  panel_index?: number;
+  tokens_prompt?: number;
+  tokens_completion?: number;
+  latency_ms?: number;
+  cost?: number;
+}
+
+/**
+ * Conversations API
+ */
+export interface ConversationsAPI {
+  getAll: () => Promise<IPCResponse<Conversation[]>>;
+  get: (id: string) => Promise<IPCResponse<{ conversation: Conversation; messages: Message[] }>>;
+  create: (id: string, title: string | null, models: string[]) => Promise<IPCResponse<{ id: string }>>;
+  updateTitle: (id: string, title: string) => Promise<IPCResponse<void>>;
+  delete: (id: string) => Promise<IPCResponse<void>>;
+}
+
+/**
+ * Messages API
+ */
+export interface MessagesAPI {
+  add: (messageData: MessageData) => Promise<IPCResponse<void>>;
+}
+
+/**
+ * API Log
+ */
+export interface ApiLog {
+  id: string;
+  conversation_id: string | null;
+  model_id: string;
+  provider: string | null;
+  request_tokens: number | null;
+  response_tokens: number | null;
+  total_tokens: number | null;
+  latency_ms: number;
+  cost: number | null;
+  status: string;
+  error_message: string | null;
+  created_at: number;
+}
+
+/**
+ * API Log data for adding
+ */
+export interface ApiLogData {
+  id: string;
+  conversation_id?: string;
+  model_id: string;
+  provider?: string;
+  request_tokens?: number;
+  response_tokens?: number;
+  total_tokens?: number;
+  latency_ms: number;
+  cost?: number;
+  status: string;
+  error_message?: string;
+}
+
+/**
+ * API Stats
+ */
+export interface ApiStats {
+  total_calls: number;
+  successful_calls: number;
+  failed_calls: number;
+  total_tokens: number | null;
+  total_cost: number | null;
+  avg_latency: number | null;
+}
+
+/**
+ * Model Stats
+ */
+export interface ModelStats {
+  model_id: string;
+  call_count: number;
+  total_tokens: number | null;
+  total_cost: number | null;
+  avg_latency: number | null;
+}
+
+/**
+ * API Logs API
+ */
+export interface ApiLogsAPI {
+  add: (logData: ApiLogData) => Promise<IPCResponse<void>>;
+  getAll: (limit?: number, offset?: number) => Promise<IPCResponse<{ logs: ApiLog[]; total: number }>>;
+  getStats: () => Promise<IPCResponse<ApiStats>>;
+  getByModel: () => Promise<IPCResponse<ModelStats[]>>;
+}
+
+/**
  * Main window API interface
  */
 export interface WindowAPI {
@@ -88,6 +297,11 @@ export interface WindowAPI {
   shell: ShellAPI;
   database: DatabaseAPI;
   app: AppAPI;
+  openrouter: OpenRouterAPI;
+  presets: PresetsAPI;
+  conversations: ConversationsAPI;
+  messages: MessagesAPI;
+  apiLogs: ApiLogsAPI;
 }
 
 declare global {

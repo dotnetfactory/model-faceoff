@@ -1,5 +1,5 @@
 /**
- * Desktop Starter App - Application Configuration
+ * AI Model Comparison Tool - Application Configuration
  *
  * This file contains all app-specific configuration that gets baked into the build.
  * It is committed to version control and shared across the team.
@@ -13,23 +13,23 @@ export const config = {
   // ===========================================================================
 
   /** App name shown in OS (menu bar, dock, task manager) */
-  productName: 'Desktop Starter App',
+  productName: 'AI Model Comparison',
 
   /** Binary/executable name (lowercase, hyphens) */
-  executableName: 'desktop-starter-app',
+  executableName: 'ai-model-comparison',
 
   /** macOS bundle identifier (reverse domain notation) */
-  appBundleId: 'com.example.desktop-starter-app',
+  appBundleId: 'com.dotnetfactory.ai-model-comparison',
 
   /** macOS app category */
-  appCategory: 'public.app-category.productivity',
+  appCategory: 'public.app-category.developer-tools',
 
   // ===========================================================================
   // DATA STORAGE
   // ===========================================================================
 
   /** Folder name in user's app data directory (~/Library/Application Support on macOS) */
-  appDataFolder: 'DesktopStarterApp',
+  appDataFolder: 'AIModelComparison',
 
   /** SQLite database filename */
   dbFilename: 'app.db',
@@ -43,7 +43,7 @@ export const config = {
     owner: 'dotnetfactory',
 
     /** Repository name */
-    repo: 'desktop-starter-app',
+    repo: 'ai-comps',
 
     /** Set to true if repository is private (requires GH_TOKEN secret) */
     private: false,

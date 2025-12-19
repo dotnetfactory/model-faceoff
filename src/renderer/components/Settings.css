@@ -247,3 +247,92 @@
   padding: var(--space-xs) var(--space-sm);
   font-size: var(--text-xs);
 }
+
+/* API Key Section */
+.api-key-section {
+  margin-bottom: var(--space-lg);
+}
+
+.api-key-section label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.api-key-input-wrapper {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.api-key-input {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.toggle-visibility-btn {
+  padding: var(--space-sm);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.toggle-visibility-btn:hover {
+  color: var(--color-text);
+}
+
+.api-key-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.api-key-actions .primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.api-info {
+  padding: var(--space-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.api-info h4 {
+  font-size: var(--text-base);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.api-info p {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.section-description a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.section-description a:hover {
+  text-decoration: underline;
+}
