@@ -1,24 +1,20 @@
 /**
- * Desktop Starter App - Main App Component
+ * AI Model Comparison Tool - Main App Component
  */
 
 import React, { useState, useEffect } from 'react';
 import { Toaster, toast } from 'sonner';
 import { Settings } from 'lucide-react';
 import { Settings as SettingsModal } from './components/Settings';
+import { ModelComparison } from './components/ModelComparison';
+import { ConversationHistory } from './components/ConversationHistory';
+import { ApiLogs } from './components/ApiLogs';
+
+type View = 'comparison' | 'history' | 'logs';
 
 export default function App() {
   const [showSettings, setShowSettings] = useState(false);
-  const [appVersion, setAppVersion] = useState<string>('');
-
-  // Load app version
-  useEffect(() => {
-    window.api.app.getVersion().then((result) => {
-      if (result.success && result.data) {
-        setAppVersion(result.data);
-      }
-    });
-  }, []);
+  const [currentView, setCurrentView] = useState<View>('comparison');
 
   // Listen for auto-update events
   useEffect(() => {
@@ -41,13 +37,30 @@ export default function App() {
     };
   }, []);
 
+  const renderView = () => {
+    switch (currentView) {
+      case 'history':
+        return <ConversationHistory onBack={() => setCurrentView('comparison')} />;
+      case 'logs':
+        return <ApiLogs onBack={() => setCurrentView('comparison')} />;
+      case 'comparison':
+      default:
+        return (
+          <ModelComparison
+            onViewHistory={() => setCurrentView('history')}
+            onViewLogs={() => setCurrentView('logs')}
+          />
+        );
+    }
+  };
+
   return (
     <div className="app-container">
       {/* Header */}
       <header className="app-header">
         <div className="header-left">
           <div className="app-logo">
-            <h1 className="app-title">Desktop Starter App</h1>
+            <h1 className="app-title">AI Model Comparison</h1>
           </div>
         </div>
         <div className="header-right">
@@ -59,26 +72,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="app-main">
-        <div className="welcome-content">
-          <h2>Welcome to Your Desktop App</h2>
-          <p>
-            This is a starter template for building Electron + React + TypeScript desktop applications.
-          </p>
-          <p>It includes:</p>
-          <ul className="feature-list">
-            <li>Auto-updates via GitHub Releases</li>
-            <li>SQLite database with settings storage</li>
-            <li>Window state persistence</li>
-            <li>Cross-platform builds (macOS, Windows, Linux)</li>
-            <li>CI/CD with GitHub Actions</li>
-          </ul>
-          <p className="version-info">Version {appVersion}</p>
-          <p className="cta-text">
-            Edit <code>src/renderer/App.tsx</code> to start building your app.
-          </p>
-        </div>
-      </main>
+      <main className="app-main">{renderView()}</main>
 
       {/* Settings Modal */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}

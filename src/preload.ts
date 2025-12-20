@@ -54,6 +54,97 @@ const appAPI = {
   },
 };
 
+// OpenRouter API
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface StreamChunkData {
+  streamId: string;
+  content: string;
+  done: boolean;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  latency_ms?: number;
+  fullContent?: string;
+  error?: string;
+}
+
+const openrouterAPI = {
+  getModels: () => ipcRenderer.invoke('openrouter:getModels'),
+  clearModelsCache: () => ipcRenderer.invoke('openrouter:clearModelsCache'),
+  startStream: (streamId: string, model: string, messages: ChatMessage[]) =>
+    ipcRenderer.invoke('openrouter:startStream', streamId, model, messages),
+  stopStream: (streamId: string) => ipcRenderer.invoke('openrouter:stopStream', streamId),
+  onStreamChunk: (callback: (data: StreamChunkData) => void) => {
+    ipcRenderer.on('openrouter:streamChunk', (_, data) => callback(data));
+  },
+  removeStreamListeners: () => {
+    ipcRenderer.removeAllListeners('openrouter:streamChunk');
+  },
+};
+
+// Presets API
+const presetsAPI = {
+  getAll: () => ipcRenderer.invoke('presets:getAll'),
+  save: (id: string, name: string, models: string[]) => ipcRenderer.invoke('presets:save', id, name, models),
+  delete: (id: string) => ipcRenderer.invoke('presets:delete', id),
+};
+
+// Conversations API
+const conversationsAPI = {
+  getAll: () => ipcRenderer.invoke('conversations:getAll'),
+  get: (id: string) => ipcRenderer.invoke('conversations:get', id),
+  create: (id: string, title: string | null, models: string[]) =>
+    ipcRenderer.invoke('conversations:create', id, title, models),
+  updateTitle: (id: string, title: string) => ipcRenderer.invoke('conversations:updateTitle', id, title),
+  delete: (id: string) => ipcRenderer.invoke('conversations:delete', id),
+};
+
+// Messages API
+interface MessageData {
+  id: string;
+  conversation_id: string;
+  role: string;
+  content: string;
+  model_id?: string;
+  panel_index?: number;
+  tokens_prompt?: number;
+  tokens_completion?: number;
+  latency_ms?: number;
+  cost?: number;
+}
+
+const messagesAPI = {
+  add: (messageData: MessageData) => ipcRenderer.invoke('messages:add', messageData),
+};
+
+// API Logs API
+interface ApiLogData {
+  id: string;
+  conversation_id?: string;
+  model_id: string;
+  provider?: string;
+  request_tokens?: number;
+  response_tokens?: number;
+  total_tokens?: number;
+  latency_ms: number;
+  cost?: number;
+  status: string;
+  error_message?: string;
+}
+
+const apiLogsAPI = {
+  add: (logData: ApiLogData) => ipcRenderer.invoke('apiLogs:add', logData),
+  getAll: (limit?: number, offset?: number) => ipcRenderer.invoke('apiLogs:getAll', limit, offset),
+  getStats: () => ipcRenderer.invoke('apiLogs:getStats'),
+  getByModel: () => ipcRenderer.invoke('apiLogs:getByModel'),
+};
+
 // Expose APIs to renderer
 contextBridge.exposeInMainWorld('api', {
   settings: settingsAPI,
@@ -61,10 +152,9 @@ contextBridge.exposeInMainWorld('api', {
   shell: shellAPI,
   database: databaseAPI,
   app: appAPI,
+  openrouter: openrouterAPI,
+  presets: presetsAPI,
+  conversations: conversationsAPI,
+  messages: messagesAPI,
+  apiLogs: apiLogsAPI,
 });
-
-// Add your own APIs below:
-// const myFeatureAPI = {
-//   doSomething: (arg: string) => ipcRenderer.invoke('myFeature:doSomething', arg),
-// };
-// Then add to exposeInMainWorld: myFeature: myFeatureAPI,
