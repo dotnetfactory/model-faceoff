@@ -1,5 +1,5 @@
 /**
- * AI Model Comparison Tool - Main App Component
+ * Model Faceoff - Main App Component
  */
 
 import React, { useState, useEffect } from 'react';
@@ -60,7 +60,7 @@ export default function App() {
       <header className="app-header">
         <div className="header-left">
           <div className="app-logo">
-            <h1 className="app-title">AI Model Comparison</h1>
+            <h1 className="app-title">Model Faceoff</h1>
           </div>
         </div>
         <div className="header-right">

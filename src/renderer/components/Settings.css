@@ -109,7 +109,7 @@
 .test-result {
   padding: var(--space-md);
   border-radius: var(--radius-md);
-  margin-bottom: var(--space-md);
+  margin-top: var(--space-md);
   font-size: var(--text-sm);
 }
 
@@ -291,7 +291,8 @@
   gap: var(--space-sm);
 }
 
-.api-key-actions .primary-button {
+.api-key-actions .primary-button,
+.api-key-actions .btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);

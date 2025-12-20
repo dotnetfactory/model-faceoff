@@ -1,6 +1,6 @@
 {
-  "name": "ai-model-comparison",
-  "productName": "AI Model Comparison",
+  "name": "model-faceoff",
+  "productName": "Model Faceoff",
   "version": "1.0.2",
   "description": "Compare AI models from different providers side-by-side with streaming responses, markdown rendering, and usage tracking",
   "main": ".vite/build/main.js",
@@ -32,7 +32,7 @@
     "name": "YOUR_NAME",
     "email": "your@email.com"
   },
-  "homepage": "https://github.com/dotnetfactory/ai-comps",
+  "homepage": "https://www.modelfaceoff.com",
   "license": "MIT",
   "devDependencies": {
     "@electron-forge/cli": "^7.9.0",

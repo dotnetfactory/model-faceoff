@@ -59,7 +59,6 @@
   gap: var(--space-md);
   flex: 1;
   min-height: 0;
-  overflow: hidden;
 }
 
 .panel-wrapper {
@@ -69,7 +68,6 @@
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
 }
 
 /* Model Selector */

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Project Overview
 
-Desktop Starter App is an Electron desktop application template with production-quality infrastructure including auto-updates, SQLite database, settings management, and CI/CD pipelines.
+Model Faceoff is an Electron desktop application that lets you compare AI models from different providers side-by-side. It features streaming responses, markdown rendering, conversation history, and usage tracking via OpenRouter API.
 
 ## Tech Stack
 
@@ -115,18 +115,18 @@ The **single source of truth** for app configuration. This file is committed to 
 
 ```typescript
 export const config = {
-  productName: 'Desktop Starter App',
-  executableName: 'desktop-starter-app',
-  appBundleId: 'com.example.desktop-starter-app',
-  appDataFolder: 'DesktopStarterApp',
+  productName: 'Model Faceoff',
+  executableName: 'model-faceoff',
+  appBundleId: 'com.modelfaceoff.app',
+  appDataFolder: 'ModelFaceoff',
   dbFilename: 'app.db',
   github: {
     owner: 'dotnetfactory',
-    repo: 'desktop-starter-app',
+    repo: 'model-faceoff',
     private: false,
   },
   autoUpdateEnabled: true,
-  maintainer: 'Your Name <your@email.com>',
+  maintainer: 'Emad Ibrahim <emad@emadibrahim.com>',
 };
 ```
 

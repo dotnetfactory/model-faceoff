@@ -1,5 +1,5 @@
 /**
- * AI Model Comparison Tool - Application Configuration
+ * Model Faceoff - Application Configuration
  *
  * This file contains all app-specific configuration that gets baked into the build.
  * It is committed to version control and shared across the team.
@@ -13,13 +13,13 @@ export const config = {
   // ===========================================================================
 
   /** App name shown in OS (menu bar, dock, task manager) */
-  productName: 'AI Model Comparison',
+  productName: 'Model Faceoff',
 
   /** Binary/executable name (lowercase, hyphens) */
-  executableName: 'ai-model-comparison',
+  executableName: 'model-faceoff',
 
   /** macOS bundle identifier (reverse domain notation) */
-  appBundleId: 'com.dotnetfactory.ai-model-comparison',
+  appBundleId: 'com.modelfaceoff.app',
 
   /** macOS app category */
   appCategory: 'public.app-category.developer-tools',
@@ -29,7 +29,7 @@ export const config = {
   // ===========================================================================
 
   /** Folder name in user's app data directory (~/Library/Application Support on macOS) */
-  appDataFolder: 'AIModelComparison',
+  appDataFolder: 'ModelFaceoff',
 
   /** SQLite database filename */
   dbFilename: 'app.db',
@@ -43,7 +43,7 @@ export const config = {
     owner: 'dotnetfactory',
 
     /** Repository name */
-    repo: 'ai-comps',
+    repo: 'model-faceoff',
 
     /** Set to true if repository is private (requires GH_TOKEN secret) */
     private: false,

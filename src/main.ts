@@ -1,5 +1,5 @@
 /**
- * Desktop Starter App - Main Process Entry Point
+ * Model Faceoff - Main Process Entry Point
  *
  * This is the main entry point for the Electron application.
  * It creates the browser window and initializes the application.

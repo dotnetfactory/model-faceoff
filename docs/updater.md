@@ -134,10 +134,10 @@ Test the built app:
 
 ```bash
 # macOS
-open out/make/dmg/darwin-arm64/DesktopStarterApp.dmg
+open out/make/dmg/darwin-arm64/ModelFaceoff.dmg
 
 # Windows
-./out/make/squirrel.windows/x64/DesktopStarterApp-1.0.0\ Setup.exe
+./out/make/squirrel.windows/x64/ModelFaceoff-1.0.0\ Setup.exe
 ```
 
 ## Testing Auto-Updates

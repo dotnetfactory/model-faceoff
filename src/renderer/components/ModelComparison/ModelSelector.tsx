@@ -154,8 +154,10 @@ export function ModelSelector({ models, selectedModelId, onSelectModel, loading,
                 <span>Clear selection</span>
               </button>
             )}
-            {filteredModels.length === 0 ? (
-              <div className="no-models">No models found</div>
+            {models.length === 0 ? (
+              <div className="no-models">No models available. Please check your OpenRouter API key in Settings.</div>
+            ) : filteredModels.length === 0 ? (
+              <div className="no-models">No models match your search</div>
             ) : (
               filteredModels.map((model) => (
                 <button

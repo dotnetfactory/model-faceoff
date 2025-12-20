@@ -120,6 +120,12 @@ export interface StreamChunkData {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
+    // Native token counts (used for actual billing)
+    native_tokens_prompt?: number;
+    native_tokens_completion?: number;
+    native_tokens_reasoning?: number;
+    // Actual cost from OpenRouter
+    cost?: number;
   };
   latency_ms?: number;
   fullContent?: string;

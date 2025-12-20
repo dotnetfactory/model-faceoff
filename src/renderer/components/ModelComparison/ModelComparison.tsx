@@ -16,7 +16,12 @@ interface PanelState {
   messages: ChatMessage[];
   isStreaming: boolean;
   currentResponse: string;
-  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | null;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    cost?: number;
+  } | null;
   latency_ms: number | null;
   error: string | null;
 }
@@ -76,10 +81,11 @@ export function ModelComparison({ onViewHistory, onViewLogs }: ModelComparisonPr
 
           // Log the API call
           if (panel.modelId && data.usage) {
+            // Use actual cost from OpenRouter if available, otherwise calculate (fallback)
             const model = models.find((m) => m.id === panel.modelId);
-            const cost = model
+            const cost = data.usage.cost ?? (model
               ? calculateCost(data.usage.prompt_tokens, data.usage.completion_tokens, model)
-              : undefined;
+              : undefined);
 
             window.api.apiLogs.add({
               id: crypto.randomUUID(),

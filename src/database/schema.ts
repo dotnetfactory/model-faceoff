@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 
 /**
- * Desktop Starter App Database Schema
+ * Model Faceoff - Database Schema
  *
  * Tables:
  * - settings: Application settings key-value store

@@ -12,7 +12,12 @@ interface ModelPanelProps {
   messages: ChatMessage[];
   currentResponse: string;
   isStreaming: boolean;
-  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | null;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    cost?: number;
+  } | null;
   latency_ms: number | null;
   error: string | null;
   model?: OpenRouterModel;
@@ -42,14 +47,18 @@ export function ModelPanel({
     return `$${cost.toFixed(3)}`;
   };
 
-  const calculateCost = (): number | null => {
-    if (!usage || !model) return null;
+  const getCost = (): number | null => {
+    if (!usage) return null;
+    // Use actual cost from OpenRouter if available
+    if (usage.cost !== undefined) return usage.cost;
+    // Fallback to calculation if model pricing is available
+    if (!model) return null;
     const promptCost = (usage.prompt_tokens / 1_000_000) * parseFloat(model.pricing.prompt);
     const completionCost = (usage.completion_tokens / 1_000_000) * parseFloat(model.pricing.completion);
     return promptCost + completionCost;
   };
 
-  const cost = calculateCost();
+  const cost = getCost();
 
   return (
     <div className="model-panel">

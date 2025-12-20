@@ -34,6 +34,18 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface OpenRouterUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  // Native token counts (used for actual billing)
+  native_tokens_prompt?: number;
+  native_tokens_completion?: number;
+  native_tokens_reasoning?: number;
+  // Actual cost from OpenRouter
+  cost?: number;
+}
+
 export interface StreamChunk {
   id: string;
   choices: {
@@ -45,20 +57,12 @@ export interface StreamChunk {
     index: number;
   }[];
   model: string;
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
+  usage?: OpenRouterUsage;
 }
 
 export interface CompletionResult {
   content: string;
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
+  usage?: OpenRouterUsage;
   latency_ms: number;
   model: string;
   error?: string;
@@ -73,8 +77,8 @@ export async function fetchModels(apiKey: string): Promise<OpenRouterModel[]> {
   const response = await fetch(`${OPENROUTER_API_BASE}/models`, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://github.com/dotnetfactory/ai-comps',
-      'X-Title': 'AI Model Comparison Tool',
+      'HTTP-Referer': 'https://modelfaceoff.com',
+      'X-Title': 'Model Faceoff',
     },
   });
 
@@ -100,13 +104,15 @@ export async function* streamCompletion(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://github.com/dotnetfactory/ai-comps',
-      'X-Title': 'AI Model Comparison Tool',
+      'HTTP-Referer': 'https://modelfaceoff.com',
+      'X-Title': 'Model Faceoff',
     },
     body: JSON.stringify({
       model,
       messages,
       stream: true,
+      // Request actual usage/cost data from OpenRouter
+      usage: { include: true },
     }),
     signal,
   });
@@ -169,13 +175,15 @@ export async function getCompletion(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://github.com/dotnetfactory/ai-comps',
-      'X-Title': 'AI Model Comparison Tool',
+      'HTTP-Referer': 'https://modelfaceoff.com',
+      'X-Title': 'Model Faceoff',
     },
     body: JSON.stringify({
       model,
       messages,
       stream: false,
+      // Request actual usage/cost data from OpenRouter
+      usage: { include: true },
     }),
   });
 

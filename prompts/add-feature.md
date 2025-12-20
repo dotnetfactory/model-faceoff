@@ -1,6 +1,6 @@
 # Add New Feature
 
-Use this prompt to add a new feature to the Desktop Starter App.
+Use this prompt to add a new feature to Model Faceoff.
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * Preload script for Desktop Starter App
+ * Model Faceoff - Preload Script
  *
  * Exposes the API to the renderer process via contextBridge.
  * This file runs in a sandboxed context with access to Node.js APIs.

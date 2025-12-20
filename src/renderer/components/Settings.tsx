@@ -22,6 +22,8 @@ export function Settings({ onClose }: SettingsProps) {
   const [showApiKey, setShowApiKey] = useState(false);
   const [savingApiKey, setSavingApiKey] = useState(false);
   const [apiKeyStatus, setApiKeyStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [testingApiKey, setTestingApiKey] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Database location state
   const [dbInfo, setDbInfo] = useState<DatabaseInfo | null>(null);
@@ -58,6 +60,7 @@ export function Settings({ onClose }: SettingsProps) {
   const handleSaveApiKey = async () => {
     setSavingApiKey(true);
     setApiKeyStatus('idle');
+    setTestResult(null);
 
     try {
       const result = await window.api.settings.set('openrouter_api_key', apiKey);
@@ -76,6 +79,45 @@ export function Settings({ onClose }: SettingsProps) {
       toast.error('Failed to save API key');
     } finally {
       setSavingApiKey(false);
+    }
+  };
+
+  const handleTestApiKey = async () => {
+    if (!apiKey.trim()) {
+      setTestResult({ success: false, message: 'Please enter an API key first.' });
+      return;
+    }
+
+    setTestingApiKey(true);
+    setTestResult(null);
+
+    try {
+      // Save the key first if it hasn't been saved
+      await window.api.settings.set('openrouter_api_key', apiKey);
+      await window.api.openrouter.clearModelsCache();
+
+      // Try to fetch models to verify the key works
+      const result = await window.api.openrouter.getModels();
+
+      if (result.success && result.data) {
+        setTestResult({
+          success: true,
+          message: `API key is valid! Found ${result.data.length} available models.`,
+        });
+        toast.success('API key verified successfully');
+      } else if (result.error) {
+        setTestResult({
+          success: false,
+          message: result.error.message || 'Failed to verify API key.',
+        });
+      }
+    } catch (err) {
+      setTestResult({
+        success: false,
+        message: `Connection failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    } finally {
+      setTestingApiKey(false);
     }
   };
 
@@ -231,7 +273,27 @@ export function Settings({ onClose }: SettingsProps) {
                       'Save API Key'
                     )}
                   </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={handleTestApiKey}
+                    disabled={testingApiKey || !apiKey.trim()}
+                  >
+                    {testingApiKey ? (
+                      <>
+                        <RefreshCw size={14} className="spinning" />
+                        Testing...
+                      </>
+                    ) : (
+                      'Test Connection'
+                    )}
+                  </button>
                 </div>
+
+                {testResult && (
+                  <div className={`test-result ${testResult.success ? 'success' : 'error'}`}>
+                    {testResult.message}
+                  </div>
+                )}
               </div>
 
               <div className="api-info">
@@ -316,8 +378,8 @@ export function Settings({ onClose }: SettingsProps) {
             <section className="settings-section about-section">
               <h3>About</h3>
               <p className="about-text">
-                Desktop Starter App is a template for building production-ready Electron applications with React and
-                TypeScript.
+                Model Faceoff lets you compare AI models from different providers side-by-side with streaming responses,
+                markdown rendering, and usage tracking.
               </p>
               <p className="version-text">Version {appVersion}</p>
               <div className="about-links">
@@ -325,10 +387,10 @@ export function Settings({ onClose }: SettingsProps) {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    window.api.shell.openExternal(`https://github.com/${__APP_CONFIG__.github.owner}/${__APP_CONFIG__.github.repo}`);
+                    window.api.shell.openExternal('https://modelfaceoff.com');
                   }}
                 >
-                  GitHub Repository
+                  modelfaceoff.com
                 </a>
               </div>
             </section>

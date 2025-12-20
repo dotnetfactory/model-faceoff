@@ -1,5 +1,5 @@
 /**
- * Desktop Starter App - Renderer Entry Point
+ * Model Faceoff - Renderer Entry Point
  */
 
 import React from 'react';

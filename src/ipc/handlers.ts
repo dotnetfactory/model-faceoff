@@ -1,5 +1,5 @@
 /**
- * IPC Handlers for Desktop Starter App
+ * Model Faceoff - IPC Handlers
  *
  * Registers all IPC handlers for the main process.
  * Add your own handlers following the pattern below.
