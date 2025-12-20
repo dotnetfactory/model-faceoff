@@ -1,7 +1,7 @@
 {
   "name": "model-faceoff",
   "productName": "Model Faceoff",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Compare AI models from different providers side-by-side with streaming responses, markdown rendering, and usage tracking",
   "main": ".vite/build/main.js",
   "scripts": {
