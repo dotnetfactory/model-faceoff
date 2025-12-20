@@ -55,6 +55,13 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
   const loggedStreamIds = useRef<Set<string>>(new Set());
   // Map streamId to modelId for logging (since panel state may change)
   const streamModelMap = useRef<Map<string, string>>(new Map());
+  // Track if title has been generated for current conversation
+  const titleGenerated = useRef(false);
+  // Store the first user message for title generation
+  const firstUserMessage = useRef<string | null>(null);
+  // Track expected stream count for first exchange
+  const expectedStreams = useRef(0);
+  const completedStreams = useRef(0);
 
   // Load models on mount
   useEffect(() => {
@@ -133,6 +140,10 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
     setConversationId(conversation.id);
     setPanels(newPanels);
 
+    // Mark title as already generated for loaded conversations
+    titleGenerated.current = true;
+    firstUserMessage.current = null;
+
     // Notify parent that conversation has been loaded
     onConversationLoaded?.();
     toast.success('Conversation loaded');
@@ -189,6 +200,28 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
 
           // Clean up the map entry
           streamModelMap.current.delete(data.streamId);
+
+          // Track stream completion for title generation
+          completedStreams.current++;
+
+          // Generate title after first exchange completes (all streams done)
+          if (
+            !titleGenerated.current &&
+            firstUserMessage.current &&
+            conversationId &&
+            completedStreams.current >= expectedStreams.current
+          ) {
+            titleGenerated.current = true;
+            const userMsg = firstUserMessage.current;
+            const convId = conversationId;
+
+            // Generate title asynchronously
+            window.api.openrouter.generateTitle(userMsg).then((result) => {
+              if (result.success && result.data) {
+                window.api.conversations.updateTitle(convId, result.data);
+              }
+            });
+          }
         }
       }
 
@@ -287,6 +320,12 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
       const modelIds = panels.map((p) => p.modelId).filter(Boolean) as string[];
       await window.api.conversations.create(convId, null, modelIds);
       setConversationId(convId);
+
+      // Set up title generation for new conversation
+      firstUserMessage.current = prompt;
+      titleGenerated.current = false;
+      expectedStreams.current = panels.filter((p) => p.modelId).length;
+      completedStreams.current = 0;
     }
 
     // Save user message
@@ -350,6 +389,11 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
       }))
     );
     setConversationId(null);
+    // Reset title generation state
+    titleGenerated.current = false;
+    firstUserMessage.current = null;
+    expectedStreams.current = 0;
+    completedStreams.current = 0;
   };
 
   const handleLoadPreset = (modelIds: string[]) => {
