@@ -98,7 +98,7 @@ export const config = {
 
 Built by **[Emad Ibrahim](https://www.emadibrahim.com)**.
 
-Website: [modelfaceoff.com](https://modelfaceoff.com)
+Website: [www.modelfaceoff.com](https://www.modelfaceoff.com)
 
 ## License
 

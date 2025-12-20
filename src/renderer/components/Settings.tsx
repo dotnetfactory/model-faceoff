@@ -387,10 +387,10 @@ export function Settings({ onClose }: SettingsProps) {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    window.api.shell.openExternal('https://modelfaceoff.com');
+                    window.api.shell.openExternal('https://www.modelfaceoff.com');
                   }}
                 >
-                  modelfaceoff.com
+                  www.modelfaceoff.com
                 </a>
               </div>
             </section>

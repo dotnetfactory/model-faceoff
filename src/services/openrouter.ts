@@ -77,7 +77,7 @@ export async function fetchModels(apiKey: string): Promise<OpenRouterModel[]> {
   const response = await fetch(`${OPENROUTER_API_BASE}/models`, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://modelfaceoff.com',
+      'HTTP-Referer': 'https://www.modelfaceoff.com',
       'X-Title': 'Model Faceoff',
     },
   });
@@ -104,7 +104,7 @@ export async function* streamCompletion(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://modelfaceoff.com',
+      'HTTP-Referer': 'https://www.modelfaceoff.com',
       'X-Title': 'Model Faceoff',
     },
     body: JSON.stringify({
@@ -175,7 +175,7 @@ export async function getCompletion(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://modelfaceoff.com',
+      'HTTP-Referer': 'https://www.modelfaceoff.com',
       'X-Title': 'Model Faceoff',
     },
     body: JSON.stringify({

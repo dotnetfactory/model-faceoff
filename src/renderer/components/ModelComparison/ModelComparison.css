@@ -49,7 +49,7 @@
 }
 
 .toolbar-button.danger:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(248, 113, 113, 0.1);
 }
 
 /* Panels Container */
@@ -455,7 +455,7 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(248, 113, 113, 0.1);
   color: var(--color-error);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -531,7 +531,7 @@
 }
 
 .stop-button:hover {
-  background: #dc2626;
+  background: #ef4444;
 }
 
 /* Modal */

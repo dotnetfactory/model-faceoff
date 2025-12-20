@@ -10,6 +10,7 @@ import { ModelComparison } from './components/ModelComparison';
 import { ConversationHistory } from './components/ConversationHistory';
 import { ApiLogs } from './components/ApiLogs';
 import { Conversation, Message } from '../types/window';
+import logoImage from './assets/logo.png';
 
 type View = 'comparison' | 'history' | 'logs';
 
@@ -84,6 +85,7 @@ export default function App() {
       <header className="app-header">
         <div className="header-left">
           <div className="app-logo">
+            <img src={logoImage} alt="Model Faceoff" className="app-logo-image" />
             <h1 className="app-title">Model Faceoff</h1>
           </div>
         </div>

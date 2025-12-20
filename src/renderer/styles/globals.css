@@ -3,30 +3,30 @@
  */
 
 :root {
-  /* Colors */
-  --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
-  --color-secondary: #64748b;
-  --color-accent: #f59e0b;
+  /* Brand Colors */
+  --color-primary: #34D399;
+  --color-primary-hover: #2cb889;
+  --color-secondary: #D8B4FE;
+  --color-accent: #F9A8D4;
 
   /* Background */
   --color-bg: #ffffff;
-  --color-bg-secondary: #f8fafc;
-  --color-bg-tertiary: #f1f5f9;
+  --color-bg-secondary: #F8FAF8;
+  --color-bg-tertiary: #f0f4f0;
 
   /* Text */
-  --color-text: #1e293b;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
+  --color-text: #1F2937;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #9ca3af;
 
   /* Border */
-  --color-border: #e2e8f0;
-  --color-border-focus: #6366f1;
+  --color-border: #e5e7eb;
+  --color-border-focus: #34D399;
 
   /* Status */
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
+  --color-success: #34D399;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
 
   /* Spacing */
   --space-xs: 0.25rem;
@@ -65,15 +65,15 @@
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #0f172a;
-    --color-bg-secondary: #1e293b;
-    --color-bg-tertiary: #334155;
+    --color-bg: #1F2937;
+    --color-bg-secondary: #111827;
+    --color-bg-tertiary: #374151;
 
-    --color-text: #f1f5f9;
-    --color-text-secondary: #94a3b8;
-    --color-text-muted: #64748b;
+    --color-text: #F8FAF8;
+    --color-text-secondary: #d1d5db;
+    --color-text-muted: #9ca3af;
 
-    --color-border: #334155;
+    --color-border: #374151;
   }
 }
 
@@ -134,6 +134,12 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+}
+
+.app-logo-image {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
 }
 
 .app-title {
@@ -225,7 +231,7 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 3px rgb(99 102 241 / 0.1);
+  box-shadow: 0 0 0 3px rgb(52 211 153 / 0.15);
 }
 
 label {
