@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Trash2, MessageSquare, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, Trash2, MessageSquare, Calendar, Clock, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,9 +12,10 @@ import './ConversationHistory.css';
 
 interface ConversationHistoryProps {
   onBack: () => void;
+  onLoadConversation: (conversation: Conversation, messages: Message[]) => void;
 }
 
-export function ConversationHistory({ onBack }: ConversationHistoryProps) {
+export function ConversationHistory({ onBack, onLoadConversation }: ConversationHistoryProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -93,6 +94,12 @@ export function ConversationHistory({ onBack }: ConversationHistoryProps) {
     }
   };
 
+  const handleContinueConversation = () => {
+    if (selectedConversation && messages.length > 0) {
+      onLoadConversation(selectedConversation, messages);
+    }
+  };
+
   // Group messages by user prompt (each user message + all assistant responses)
   const groupedMessages = messages.reduce<{ userMessage: Message; responses: Message[] }[]>((acc, msg) => {
     if (msg.role === 'user') {
@@ -165,14 +172,20 @@ export function ConversationHistory({ onBack }: ConversationHistoryProps) {
           ) : (
             <div className="messages-view">
               <div className="conversation-header">
-                <h2>{getConversationTitle(selectedConversation)}</h2>
-                <div className="models-used">
-                  {getModels(selectedConversation).map((model, i) => (
-                    <span key={i} className="model-tag">
-                      {model.split('/').pop()}
-                    </span>
-                  ))}
+                <div className="conversation-header-info">
+                  <h2>{getConversationTitle(selectedConversation)}</h2>
+                  <div className="models-used">
+                    {getModels(selectedConversation).map((model, i) => (
+                      <span key={i} className="model-tag">
+                        {model.split('/').pop()}
+                      </span>
+                    ))}
+                  </div>
                 </div>
+                <button className="continue-button" onClick={handleContinueConversation}>
+                  <Play size={16} />
+                  <span>Continue</span>
+                </button>
               </div>
 
               <div className="messages-list">

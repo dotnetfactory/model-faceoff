@@ -335,6 +335,46 @@ export function registerIPCHandlers(): void {
     return { success: true };
   });
 
+  // Free model for generating conversation titles
+  const TITLE_GENERATION_MODEL = 'meta-llama/llama-3.2-3b-instruct:free';
+
+  ipcMain.handle('openrouter:generateTitle', async (_, userMessage: string) => {
+    try {
+      const db = getDatabase();
+      const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('openrouter_api_key') as
+        | { value: string }
+        | undefined;
+      const apiKey = row?.value;
+
+      if (!apiKey) {
+        return { success: false, error: { code: 'NO_API_KEY', message: 'OpenRouter API key not configured' } };
+      }
+
+      const { getCompletion } = await import('../services/openrouter');
+      const result = await getCompletion(apiKey, TITLE_GENERATION_MODEL, [
+        {
+          role: 'system',
+          content: 'Generate a very short title (3-6 words) for a conversation that starts with the following message. Reply with ONLY the title, no quotes, no punctuation at the end.',
+        },
+        {
+          role: 'user',
+          content: userMessage,
+        },
+      ]);
+
+      if (result.error) {
+        return { success: false, error: { code: 'GENERATION_ERROR', message: result.error } };
+      }
+
+      // Clean up the title - remove quotes, trim whitespace
+      const title = result.content.replace(/^["']|["']$/g, '').trim();
+
+      return { success: true, data: title };
+    } catch (error) {
+      return { success: false, error: { code: 'GENERATION_ERROR', message: String(error) } };
+    }
+  });
+
   // ============= Presets =============
 
   ipcMain.handle('presets:getAll', async () => {

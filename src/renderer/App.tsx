@@ -9,12 +9,19 @@ import { Settings as SettingsModal } from './components/Settings';
 import { ModelComparison } from './components/ModelComparison';
 import { ConversationHistory } from './components/ConversationHistory';
 import { ApiLogs } from './components/ApiLogs';
+import { Conversation, Message } from '../types/window';
 
 type View = 'comparison' | 'history' | 'logs';
+
+export interface LoadedConversation {
+  conversation: Conversation;
+  messages: Message[];
+}
 
 export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [currentView, setCurrentView] = useState<View>('comparison');
+  const [loadedConversation, setLoadedConversation] = useState<LoadedConversation | null>(null);
 
   // Listen for auto-update events
   useEffect(() => {
@@ -37,10 +44,25 @@ export default function App() {
     };
   }, []);
 
+  const handleLoadConversation = (conversation: Conversation, messages: Message[]) => {
+    setLoadedConversation({ conversation, messages });
+    setCurrentView('comparison');
+  };
+
+  const handleConversationLoaded = () => {
+    // Clear loaded conversation after it's been restored
+    setLoadedConversation(null);
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'history':
-        return <ConversationHistory onBack={() => setCurrentView('comparison')} />;
+        return (
+          <ConversationHistory
+            onBack={() => setCurrentView('comparison')}
+            onLoadConversation={handleLoadConversation}
+          />
+        );
       case 'logs':
         return <ApiLogs onBack={() => setCurrentView('comparison')} />;
       case 'comparison':
@@ -49,6 +71,8 @@ export default function App() {
           <ModelComparison
             onViewHistory={() => setCurrentView('history')}
             onViewLogs={() => setCurrentView('logs')}
+            loadedConversation={loadedConversation}
+            onConversationLoaded={handleConversationLoaded}
           />
         );
     }

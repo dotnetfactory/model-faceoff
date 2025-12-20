@@ -140,6 +140,7 @@ export interface OpenRouterAPI {
   clearModelsCache: () => Promise<IPCResponse<void>>;
   startStream: (streamId: string, model: string, messages: ChatMessage[]) => Promise<IPCResponse<{ streamId: string }>>;
   stopStream: (streamId: string) => Promise<IPCResponse<void>>;
+  generateTitle: (userMessage: string) => Promise<IPCResponse<string>>;
   onStreamChunk: (callback: (data: StreamChunkData) => void) => void;
   removeStreamListeners: () => void;
 }

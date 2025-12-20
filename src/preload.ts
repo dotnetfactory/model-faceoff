@@ -80,7 +80,10 @@ const openrouterAPI = {
   startStream: (streamId: string, model: string, messages: ChatMessage[]) =>
     ipcRenderer.invoke('openrouter:startStream', streamId, model, messages),
   stopStream: (streamId: string) => ipcRenderer.invoke('openrouter:stopStream', streamId),
+  generateTitle: (userMessage: string) => ipcRenderer.invoke('openrouter:generateTitle', userMessage),
   onStreamChunk: (callback: (data: StreamChunkData) => void) => {
+    // Remove any existing listeners first to prevent duplicates
+    ipcRenderer.removeAllListeners('openrouter:streamChunk');
     ipcRenderer.on('openrouter:streamChunk', (_, data) => callback(data));
   },
   removeStreamListeners: () => {

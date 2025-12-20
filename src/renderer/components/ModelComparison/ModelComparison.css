@@ -302,6 +302,56 @@
 
 .message {
   margin-bottom: var(--space-md);
+  max-width: 85%;
+}
+
+/* User message - chat bubble on the right */
+.message.user {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.message.user .message-role {
+  text-align: right;
+}
+
+.message.user .message-content {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.message.user .message-content p {
+  color: white;
+}
+
+.message.user .message-content code {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.message.user .message-content pre {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.message.user .message-content pre code {
+  background: none;
+}
+
+/* Assistant message - chat bubble on the left */
+.message.assistant {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.message.assistant .message-content {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--radius-sm);
 }
 
 .message-role {

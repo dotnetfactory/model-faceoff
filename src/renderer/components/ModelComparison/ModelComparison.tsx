@@ -8,7 +8,8 @@ import { toast } from 'sonner';
 import { ModelPanel } from './ModelPanel';
 import { ModelSelector } from './ModelSelector';
 import { PresetManager } from './PresetManager';
-import { OpenRouterModel, ChatMessage, StreamChunkData } from '../../../types/window';
+import { OpenRouterModel, ChatMessage, StreamChunkData, Message } from '../../../types/window';
+import { LoadedConversation } from '../../App';
 import './ModelComparison.css';
 
 interface PanelState {
@@ -29,9 +30,11 @@ interface PanelState {
 interface ModelComparisonProps {
   onViewHistory: () => void;
   onViewLogs: () => void;
+  loadedConversation?: LoadedConversation | null;
+  onConversationLoaded?: () => void;
 }
 
-export function ModelComparison({ onViewHistory, onViewLogs }: ModelComparisonProps) {
+export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation, onConversationLoaded }: ModelComparisonProps) {
   const [models, setModels] = useState<OpenRouterModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(true);
   const [prompt, setPrompt] = useState('');
@@ -48,6 +51,10 @@ export function ModelComparison({ onViewHistory, onViewLogs }: ModelComparisonPr
 
   // Active stream IDs for each panel
   const activeStreamIds = useRef<(string | null)[]>([null, null, null]);
+  // Track which streams have been logged to prevent duplicates
+  const loggedStreamIds = useRef<Set<string>>(new Set());
+  // Map streamId to modelId for logging (since panel state may change)
+  const streamModelMap = useRef<Map<string, string>>(new Map());
 
   // Load models on mount
   useEffect(() => {
@@ -55,12 +62,137 @@ export function ModelComparison({ onViewHistory, onViewLogs }: ModelComparisonPr
     loadLastSelection();
   }, []);
 
+  // Restore loaded conversation
+  useEffect(() => {
+    if (!loadedConversation || models.length === 0) return;
+
+    const { conversation, messages } = loadedConversation;
+
+    // Parse model IDs from conversation
+    let modelIds: string[] = [];
+    try {
+      modelIds = JSON.parse(conversation.models);
+    } catch {
+      toast.error('Failed to parse conversation models');
+      return;
+    }
+
+    // Group messages by panel_index for assistant messages
+    // User messages are shared across all panels
+    const userMessages = messages.filter((m) => m.role === 'user');
+    const assistantMessagesByPanel = new Map<number, Message[]>();
+
+    messages
+      .filter((m) => m.role === 'assistant' && m.panel_index !== null)
+      .forEach((m) => {
+        const panelMessages = assistantMessagesByPanel.get(m.panel_index!) || [];
+        panelMessages.push(m);
+        assistantMessagesByPanel.set(m.panel_index!, panelMessages);
+      });
+
+    // Build chat messages for each panel by interleaving user and assistant messages
+    const newPanels: PanelState[] = modelIds.slice(0, 3).map((modelId, index) => {
+      const panelAssistantMessages = assistantMessagesByPanel.get(index) || [];
+      const chatMessages: ChatMessage[] = [];
+
+      // Interleave user messages with this panel's assistant responses
+      userMessages.forEach((userMsg, userIndex) => {
+        chatMessages.push({ role: 'user', content: userMsg.content });
+        // Find the assistant message that corresponds to this user message
+        const assistantMsg = panelAssistantMessages[userIndex];
+        if (assistantMsg) {
+          chatMessages.push({ role: 'assistant', content: assistantMsg.content });
+        }
+      });
+
+      return {
+        modelId,
+        messages: chatMessages,
+        isStreaming: false,
+        currentResponse: '',
+        usage: null,
+        latency_ms: null,
+        error: null,
+      };
+    });
+
+    // Pad with empty panels if needed
+    while (newPanels.length < 3) {
+      newPanels.push({
+        modelId: null,
+        messages: [],
+        isStreaming: false,
+        currentResponse: '',
+        usage: null,
+        latency_ms: null,
+        error: null,
+      });
+    }
+
+    // Set state
+    setConversationId(conversation.id);
+    setPanels(newPanels);
+
+    // Notify parent that conversation has been loaded
+    onConversationLoaded?.();
+    toast.success('Conversation loaded');
+  }, [loadedConversation, models, onConversationLoaded]);
+
   // Setup stream listener
   useEffect(() => {
     const handleStreamChunk = (data: StreamChunkData) => {
       const panelIndex = activeStreamIds.current.findIndex((id) => id === data.streamId);
       if (panelIndex === -1) return;
 
+      // Handle completion logging outside of state updater to prevent duplicates
+      if (data.done && !loggedStreamIds.current.has(data.streamId)) {
+        loggedStreamIds.current.add(data.streamId);
+
+        // Get modelId from our ref map (set when stream was started)
+        const modelId = streamModelMap.current.get(data.streamId);
+
+        if (modelId && data.usage) {
+          const model = models.find((m) => m.id === modelId);
+          const cost = data.usage.cost ?? (model
+            ? calculateCost(data.usage.prompt_tokens, data.usage.completion_tokens, model)
+            : undefined);
+
+          // Log the API call
+          window.api.apiLogs.add({
+            id: crypto.randomUUID(),
+            conversation_id: conversationId || undefined,
+            model_id: modelId,
+            provider: modelId.split('/')[0],
+            request_tokens: data.usage.prompt_tokens,
+            response_tokens: data.usage.completion_tokens,
+            total_tokens: data.usage.total_tokens,
+            latency_ms: data.latency_ms || 0,
+            cost,
+            status: 'success',
+          });
+
+          // Save message to database
+          if (conversationId) {
+            window.api.messages.add({
+              id: crypto.randomUUID(),
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: data.fullContent || '',
+              model_id: modelId,
+              panel_index: panelIndex,
+              tokens_prompt: data.usage.prompt_tokens,
+              tokens_completion: data.usage.completion_tokens,
+              latency_ms: data.latency_ms,
+              cost,
+            });
+          }
+
+          // Clean up the map entry
+          streamModelMap.current.delete(data.streamId);
+        }
+      }
+
+      // Update panel state (pure function)
       setPanels((prev) => {
         const newPanels = [...prev];
         const panel = { ...newPanels[panelIndex] };
@@ -78,44 +210,6 @@ export function ModelComparison({ onViewHistory, onViewLogs }: ModelComparisonPr
             panel.currentResponse = '';
           }
           activeStreamIds.current[panelIndex] = null;
-
-          // Log the API call
-          if (panel.modelId && data.usage) {
-            // Use actual cost from OpenRouter if available, otherwise calculate (fallback)
-            const model = models.find((m) => m.id === panel.modelId);
-            const cost = data.usage.cost ?? (model
-              ? calculateCost(data.usage.prompt_tokens, data.usage.completion_tokens, model)
-              : undefined);
-
-            window.api.apiLogs.add({
-              id: crypto.randomUUID(),
-              conversation_id: conversationId || undefined,
-              model_id: panel.modelId,
-              provider: panel.modelId.split('/')[0],
-              request_tokens: data.usage.prompt_tokens,
-              response_tokens: data.usage.completion_tokens,
-              total_tokens: data.usage.total_tokens,
-              latency_ms: data.latency_ms || 0,
-              cost,
-              status: 'success',
-            });
-
-            // Save message to database
-            if (conversationId) {
-              window.api.messages.add({
-                id: crypto.randomUUID(),
-                conversation_id: conversationId,
-                role: 'assistant',
-                content: data.fullContent || '',
-                model_id: panel.modelId,
-                panel_index: panelIndex,
-                tokens_prompt: data.usage.prompt_tokens,
-                tokens_completion: data.usage.completion_tokens,
-                latency_ms: data.latency_ms,
-                cost,
-              });
-            }
-          }
         } else {
           panel.currentResponse += data.content;
         }
@@ -225,6 +319,8 @@ export function ModelComparison({ onViewHistory, onViewLogs }: ModelComparisonPr
       if (panel.modelId) {
         const streamId = `stream-${++streamIdCounter.current}`;
         activeStreamIds.current[index] = streamId;
+        // Store modelId for this stream so we can use it when logging completion
+        streamModelMap.current.set(streamId, panel.modelId);
 
         const allMessages: ChatMessage[] = [...panel.messages, userMessage];
         window.api.openrouter.startStream(streamId, panel.modelId, allMessages);
@@ -317,7 +413,7 @@ export function ModelComparison({ onViewHistory, onViewLogs }: ModelComparisonPr
               selectedModelId={panel.modelId}
               onSelectModel={(modelId) => handleModelChange(index, modelId)}
               loading={loadingModels}
-              disabled={panel.isStreaming}
+              disabled={panel.isStreaming || panel.messages.length > 0}
             />
             <ModelPanel
               messages={panel.messages}

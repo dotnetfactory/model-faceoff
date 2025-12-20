@@ -151,9 +151,18 @@
 }
 
 .conversation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   padding: var(--space-md) var(--space-lg);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
+  gap: var(--space-md);
+}
+
+.conversation-header-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .conversation-header h2 {
@@ -166,6 +175,26 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
+}
+
+.continue-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.continue-button:hover {
+  background: var(--color-primary-hover);
 }
 
 .model-tag {
@@ -192,6 +221,47 @@
 
 .message {
   margin-bottom: var(--space-md);
+  max-width: 85%;
+}
+
+/* User message - chat bubble on the right */
+.user-message {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.user-message .message-header {
+  justify-content: flex-end;
+}
+
+.user-message .message-content {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.user-message .message-content code {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.user-message .message-content pre {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.user-message .message-content pre code {
+  background: none;
+}
+
+/* Assistant messages - on the left */
+.assistant-message .message-content {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--radius-sm);
 }
 
 .message-header {
@@ -218,6 +288,11 @@
   gap: var(--space-xs);
   font-size: var(--text-xs);
   color: var(--color-text-muted);
+}
+
+.user-message .message-time {
+  color: var(--color-primary);
+  opacity: 0.8;
 }
 
 .message-latency {
@@ -272,9 +347,15 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--space-md);
+  margin-left: 0;
 }
 
-.assistant-message {
+.responses-grid .assistant-message {
+  max-width: 100%;
+  margin: 0;
+}
+
+.responses-grid .assistant-message .message-content {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
