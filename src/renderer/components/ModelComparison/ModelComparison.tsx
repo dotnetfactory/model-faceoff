@@ -249,7 +249,10 @@ export function ModelComparison({ onViewLogs, loadedConversation, onConversation
             // Generate title asynchronously
             window.api.openrouter.generateTitle(userMsg).then((result) => {
               if (result.success && result.data) {
-                window.api.conversations.updateTitle(convId, result.data);
+                window.api.conversations.updateTitle(convId, result.data).then(() => {
+                  // Trigger sidebar refresh to show the new title
+                  onConversationChanged?.(convId);
+                });
               }
             });
           }
@@ -297,7 +300,7 @@ export function ModelComparison({ onViewLogs, loadedConversation, onConversation
     return () => {
       window.api.openrouter.removeStreamListeners();
     };
-  }, [models, conversationId]);
+  }, [models, conversationId, onConversationChanged]);
 
   const loadModels = async () => {
     setLoadingModels(true);
@@ -438,6 +441,8 @@ export function ModelComparison({ onViewLogs, loadedConversation, onConversation
 
   const isAnyStreaming = panels.some((p) => p.isStreaming);
   const hasAnyMessages = panels.some((p) => p.messages.length > 0);
+  // Count panels with assistant responses (for sharing - need at least 2 models to compare)
+  const modelsWithResponses = panels.filter((p) => p.messages.some((m) => m.role === 'assistant')).length;
 
   return (
     <div className="model-comparison">
@@ -458,7 +463,7 @@ export function ModelComparison({ onViewLogs, loadedConversation, onConversation
           </button>
         </div>
         <div className="toolbar-right">
-          {conversationId && hasAnyMessages && (
+          {conversationId && hasAnyMessages && modelsWithResponses >= 2 && (
             <button
               onClick={() => setShowShareDialog(true)}
               className="toolbar-button"
