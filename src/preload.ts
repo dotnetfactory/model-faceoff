@@ -148,6 +148,12 @@ const apiLogsAPI = {
   getByModel: () => ipcRenderer.invoke('apiLogs:getByModel'),
 };
 
+// Share API
+const shareAPI = {
+  createShare: (conversationId: string) => ipcRenderer.invoke('share:createShare', conversationId),
+  getHistory: (conversationId: string) => ipcRenderer.invoke('share:getHistory', conversationId),
+};
+
 // Expose APIs to renderer
 contextBridge.exposeInMainWorld('api', {
   settings: settingsAPI,
@@ -160,4 +166,5 @@ contextBridge.exposeInMainWorld('api', {
   conversations: conversationsAPI,
   messages: messagesAPI,
   apiLogs: apiLogsAPI,
+  share: shareAPI,
 });

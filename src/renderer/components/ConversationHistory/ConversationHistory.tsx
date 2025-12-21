@@ -3,11 +3,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Trash2, MessageSquare, Calendar, Clock, Play } from 'lucide-react';
+import { ArrowLeft, Trash2, MessageSquare, Calendar, Clock, Play, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Conversation, Message } from '../../../types/window';
+import { ShareDialog } from '../ShareDialog/ShareDialog';
 import './ConversationHistory.css';
 
 interface ConversationHistoryProps {
@@ -21,6 +22,7 @@ export function ConversationHistory({ onBack, onLoadConversation }: Conversation
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   useEffect(() => {
     loadConversations();
@@ -182,10 +184,16 @@ export function ConversationHistory({ onBack, onLoadConversation }: Conversation
                     ))}
                   </div>
                 </div>
-                <button className="continue-button" onClick={handleContinueConversation}>
-                  <Play size={16} />
-                  <span>Continue</span>
-                </button>
+                <div className="conversation-header-actions">
+                  <button className="share-button" onClick={() => setShowShareDialog(true)}>
+                    <Share2 size={16} />
+                    <span>Share</span>
+                  </button>
+                  <button className="continue-button" onClick={handleContinueConversation}>
+                    <Play size={16} />
+                    <span>Continue</span>
+                  </button>
+                </div>
               </div>
 
               <div className="messages-list">
@@ -232,6 +240,15 @@ export function ConversationHistory({ onBack, onLoadConversation }: Conversation
           )}
         </div>
       </div>
+
+      {/* Share Dialog */}
+      {showShareDialog && selectedConversation && (
+        <ShareDialog
+          conversationId={selectedConversation.id}
+          conversationTitle={selectedConversation.title}
+          onClose={() => setShowShareDialog(false)}
+        />
+      )}
     </div>
   );
 }

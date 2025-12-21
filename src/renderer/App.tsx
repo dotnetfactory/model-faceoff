@@ -2,17 +2,17 @@
  * Model Faceoff - Main App Component
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Toaster, toast } from 'sonner';
 import { Settings } from 'lucide-react';
 import { Settings as SettingsModal } from './components/Settings';
 import { ModelComparison } from './components/ModelComparison';
-import { ConversationHistory } from './components/ConversationHistory';
+import { Sidebar } from './components/Sidebar';
 import { ApiLogs } from './components/ApiLogs';
 import { Conversation, Message } from '../types/window';
 import logoImage from './assets/logo.png';
 
-type View = 'comparison' | 'history' | 'logs';
+type View = 'comparison' | 'logs';
 
 export interface LoadedConversation {
   conversation: Conversation;
@@ -23,6 +23,9 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [currentView, setCurrentView] = useState<View>('comparison');
   const [loadedConversation, setLoadedConversation] = useState<LoadedConversation | null>(null);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [sidebarRefreshTrigger, setSidebarRefreshTrigger] = useState(0);
+  const [newChatTrigger, setNewChatTrigger] = useState(0);
 
   // Listen for auto-update events
   useEffect(() => {
@@ -45,35 +48,42 @@ export default function App() {
     };
   }, []);
 
-  const handleLoadConversation = (conversation: Conversation, messages: Message[]) => {
+  const handleSelectConversation = useCallback((conversation: Conversation, messages: Message[]) => {
     setLoadedConversation({ conversation, messages });
+    setCurrentConversationId(conversation.id);
     setCurrentView('comparison');
-  };
+  }, []);
 
-  const handleConversationLoaded = () => {
+  const handleNewConversation = useCallback(() => {
+    setLoadedConversation(null);
+    setCurrentConversationId(null);
+    setNewChatTrigger((prev) => prev + 1);
+  }, []);
+
+  const handleConversationLoaded = useCallback(() => {
     // Clear loaded conversation after it's been restored
     setLoadedConversation(null);
-  };
+  }, []);
+
+  const handleConversationChanged = useCallback((conversationId: string | null) => {
+    setCurrentConversationId(conversationId);
+    // Trigger sidebar refresh
+    setSidebarRefreshTrigger((prev) => prev + 1);
+  }, []);
 
   const renderView = () => {
     switch (currentView) {
-      case 'history':
-        return (
-          <ConversationHistory
-            onBack={() => setCurrentView('comparison')}
-            onLoadConversation={handleLoadConversation}
-          />
-        );
       case 'logs':
         return <ApiLogs onBack={() => setCurrentView('comparison')} />;
       case 'comparison':
       default:
         return (
           <ModelComparison
-            onViewHistory={() => setCurrentView('history')}
             onViewLogs={() => setCurrentView('logs')}
             loadedConversation={loadedConversation}
             onConversationLoaded={handleConversationLoaded}
+            onConversationChanged={handleConversationChanged}
+            newChatTrigger={newChatTrigger}
           />
         );
     }
@@ -97,8 +107,16 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="app-main">{renderView()}</main>
+      {/* Main Content with Sidebar */}
+      <div className="app-body">
+        <Sidebar
+          currentConversationId={currentConversationId}
+          onSelectConversation={handleSelectConversation}
+          onNewConversation={handleNewConversation}
+          refreshTrigger={sidebarRefreshTrigger}
+        />
+        <main className="app-main">{renderView()}</main>
+      </div>
 
       {/* Settings Modal */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}

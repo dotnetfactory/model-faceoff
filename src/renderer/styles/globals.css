@@ -148,6 +148,14 @@ body {
   color: var(--color-text);
 }
 
+/* App Body - Sidebar + Main Content */
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* Main Content */
 .app-main {
   flex: 1;

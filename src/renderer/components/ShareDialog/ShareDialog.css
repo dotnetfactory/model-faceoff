@@ -1,0 +1,272 @@
+.share-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.share-dialog {
+  background: var(--color-bg);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.share-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.share-dialog-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.share-dialog-header .close-button {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-dialog-header .close-button:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+}
+
+.share-dialog-content {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.share-description {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.create-share-button {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.create-share-button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.create-share-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.new-share-result {
+  margin-bottom: 16px;
+}
+
+.share-url-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.share-url-input {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-text);
+  font-family: monospace;
+}
+
+.share-url-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.copy-button,
+.open-button {
+  padding: 8px 12px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.copy-button:hover,
+.open-button:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+.copy-button.copied {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+.share-success {
+  margin: 0;
+  font-size: 13px;
+  color: #10b981;
+}
+
+.share-error {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: var(--color-error);
+}
+
+.share-history-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.share-history-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.loading-history,
+.no-history {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.share-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.share-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.share-history-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.share-history-meta {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.share-date,
+.share-messages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.share-history-url {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-history-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.share-history-actions .copy-button,
+.share-history-actions .open-button {
+  padding: 6px 8px;
+}

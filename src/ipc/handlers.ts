@@ -640,5 +640,161 @@ export function registerIPCHandlers(): void {
     }
   });
 
+  // ============= Shares =============
+
+  // Use localhost in development, production URL in packaged app
+  // app.isPackaged is true when running from a built .app/.exe, false during npm run dev
+  const SHARE_API_URL = app.isPackaged
+    ? 'https://www.modelfaceoff.com'
+    : 'http://localhost:3000';
+
+  ipcMain.handle('share:createShare', async (_, conversationId: string) => {
+    try {
+      const db = getDatabase();
+
+      // Get conversation
+      const conversation = db.prepare('SELECT * FROM conversations WHERE id = ?').get(conversationId) as
+        | { id: string; title: string | null; models: string }
+        | undefined;
+
+      if (!conversation) {
+        return { success: false, error: { code: 'NOT_FOUND', message: 'Conversation not found' } };
+      }
+
+      // Get messages
+      const messages = db
+        .prepare(
+          `
+        SELECT id, role, content, model_id, panel_index, tokens_prompt, tokens_completion, latency_ms, cost, created_at
+        FROM messages WHERE conversation_id = ?
+        ORDER BY created_at
+      `
+        )
+        .all(conversationId) as Array<{
+        id: string;
+        role: string;
+        content: string;
+        model_id: string | null;
+        panel_index: number | null;
+        tokens_prompt: number | null;
+        tokens_completion: number | null;
+        latency_ms: number | null;
+        cost: number | null;
+        created_at: number;
+      }>;
+
+      if (messages.length === 0) {
+        return { success: false, error: { code: 'NO_MESSAGES', message: 'Conversation has no messages' } };
+      }
+
+      // Build share payload (NO API keys - just conversation data)
+      const shareData = {
+        title: conversation.title,
+        models: JSON.parse(conversation.models),
+        messages: messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          model_id: m.model_id,
+          panel_index: m.panel_index,
+          tokens_prompt: m.tokens_prompt,
+          tokens_completion: m.tokens_completion,
+          latency_ms: m.latency_ms,
+          cost: m.cost,
+          created_at: m.created_at,
+        })),
+      };
+
+      // Step 1: Get token
+      const tokenResponse = await fetch(`${SHARE_API_URL}/api/share/token`);
+      const tokenResult = (await tokenResponse.json()) as {
+        success: boolean;
+        token?: string;
+        error?: { code: string; message: string };
+      };
+
+      if (!tokenResult.success || !tokenResult.token) {
+        return {
+          success: false,
+          error: {
+            code: tokenResult.error?.code || 'TOKEN_ERROR',
+            message: tokenResult.error?.message || 'Failed to get share token',
+          },
+        };
+      }
+
+      // Step 2: Create share with token
+      const shareResponse = await fetch(`${SHARE_API_URL}/api/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tokenResult.token}`,
+        },
+        body: JSON.stringify(shareData),
+      });
+
+      const shareResult = (await shareResponse.json()) as {
+        success: boolean;
+        shareCode?: string;
+        shareUrl?: string;
+        error?: { code: string; message: string };
+      };
+
+      if (!shareResult.success || !shareResult.shareCode) {
+        return {
+          success: false,
+          error: {
+            code: shareResult.error?.code || 'SHARE_ERROR',
+            message: shareResult.error?.message || 'Failed to create share',
+          },
+        };
+      }
+
+      // Construct the share URL locally (uses localhost in dev, production URL in packaged app)
+      const shareUrl = `${SHARE_API_URL}/s/${shareResult.shareCode}`;
+
+      // Step 3: Save share to local database
+      const shareId = crypto.randomUUID();
+      const now = Date.now();
+      db.prepare(
+        `
+        INSERT INTO shares (id, conversation_id, share_code, share_url, message_count, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `
+      ).run(shareId, conversationId, shareResult.shareCode, shareUrl, messages.length, now);
+
+      return {
+        success: true,
+        data: {
+          shareCode: shareResult.shareCode,
+          shareUrl,
+          messageCount: messages.length,
+        },
+      };
+    } catch (error) {
+      console.error('Share creation error:', error);
+      return { success: false, error: { code: 'SHARE_ERROR', message: String(error) } };
+    }
+  });
+
+  ipcMain.handle('share:getHistory', async (_, conversationId: string) => {
+    try {
+      const db = getDatabase();
+      const shares = db
+        .prepare(
+          `
+        SELECT id, share_code, share_url, message_count, created_at
+        FROM shares
+        WHERE conversation_id = ?
+        ORDER BY created_at DESC
+      `
+        )
+        .all(conversationId);
+      return { success: true, data: shares };
+    } catch (error) {
+      return { success: false, error: { code: 'GET_SHARES_ERROR', message: String(error) } };
+    }
+  });
+
   console.log('[IPC] All handlers registered');
 }

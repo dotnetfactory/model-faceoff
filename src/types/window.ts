@@ -296,6 +296,34 @@ export interface ApiLogsAPI {
 }
 
 /**
+ * Share record
+ */
+export interface Share {
+  id: string;
+  share_code: string;
+  share_url: string;
+  message_count: number;
+  created_at: number;
+}
+
+/**
+ * Share creation response
+ */
+export interface ShareResponse {
+  shareCode: string;
+  shareUrl: string;
+  messageCount: number;
+}
+
+/**
+ * Share API
+ */
+export interface ShareAPI {
+  createShare: (conversationId: string) => Promise<IPCResponse<ShareResponse>>;
+  getHistory: (conversationId: string) => Promise<IPCResponse<Share[]>>;
+}
+
+/**
  * Main window API interface
  */
 export interface WindowAPI {
@@ -309,6 +337,7 @@ export interface WindowAPI {
   conversations: ConversationsAPI;
   messages: MessagesAPI;
   apiLogs: ApiLogsAPI;
+  share: ShareAPI;
 }
 
 declare global {

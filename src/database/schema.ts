@@ -20,6 +20,7 @@ export function initializeDatabase(db: Database.Database): void {
   createConversationsTable(db);
   createMessagesTable(db);
   createApiLogsTable(db);
+  createSharesTable(db);
 
   console.log('Database schema initialization complete');
 }
@@ -170,5 +171,36 @@ function createApiLogsTable(db: Database.Database): void {
       CREATE INDEX idx_api_logs_model ON api_logs(model_id);
     `);
     console.log('api_logs table created successfully');
+  }
+}
+
+/**
+ * Shares table - stores share history for conversations
+ */
+function createSharesTable(db: Database.Database): void {
+  const tableExists = db
+    .prepare(
+      `
+    SELECT name FROM sqlite_master
+    WHERE type='table' AND name='shares'
+  `
+    )
+    .get();
+
+  if (!tableExists) {
+    console.log('Creating shares table...');
+    db.exec(`
+      CREATE TABLE shares (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL,
+        share_code TEXT NOT NULL,
+        share_url TEXT NOT NULL,
+        message_count INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+      );
+      CREATE INDEX idx_shares_conversation ON shares(conversation_id);
+    `);
+    console.log('shares table created successfully');
   }
 }

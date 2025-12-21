@@ -1,5 +1,0 @@
-- [ ] change icons
-- [ ] change github visibilty to public
-- [ ] build website with download links
-- [ ] Test app releases and updates
-- [ ] 

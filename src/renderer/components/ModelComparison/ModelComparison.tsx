@@ -3,11 +3,12 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Trash2, Save, History, BarChart3 } from 'lucide-react';
+import { Send, Save, BarChart3, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ModelPanel } from './ModelPanel';
 import { ModelSelector } from './ModelSelector';
 import { PresetManager } from './PresetManager';
+import { ShareDialog } from '../ShareDialog/ShareDialog';
 import { OpenRouterModel, ChatMessage, StreamChunkData, Message } from '../../../types/window';
 import { LoadedConversation } from '../../App';
 import './ModelComparison.css';
@@ -28,18 +29,20 @@ interface PanelState {
 }
 
 interface ModelComparisonProps {
-  onViewHistory: () => void;
   onViewLogs: () => void;
   loadedConversation?: LoadedConversation | null;
   onConversationLoaded?: () => void;
+  onConversationChanged?: (conversationId: string | null) => void;
+  newChatTrigger?: number;
 }
 
-export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation, onConversationLoaded }: ModelComparisonProps) {
+export function ModelComparison({ onViewLogs, loadedConversation, onConversationLoaded, onConversationChanged, newChatTrigger }: ModelComparisonProps) {
   const [models, setModels] = useState<OpenRouterModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(true);
   const [prompt, setPrompt] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [showPresetManager, setShowPresetManager] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const streamIdCounter = useRef(0);
 
   // Initialize 3 panels
@@ -68,6 +71,34 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
     loadModels();
     loadLastSelection();
   }, []);
+
+  // Track if this is the first render (to skip clearing on mount)
+  const isFirstRender = useRef(true);
+
+  // Handle "New Chat" trigger from sidebar
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    // Clear conversation when newChatTrigger changes
+    setPanels((prev) =>
+      prev.map((panel) => ({
+        ...panel,
+        messages: [],
+        currentResponse: '',
+        usage: null,
+        latency_ms: null,
+        error: null,
+      }))
+    );
+    setConversationId(null);
+    onConversationChanged?.(null);
+    titleGenerated.current = false;
+    firstUserMessage.current = null;
+    expectedStreams.current = 0;
+    completedStreams.current = 0;
+  }, [newChatTrigger, onConversationChanged]);
 
   // Restore loaded conversation
   useEffect(() => {
@@ -236,7 +267,17 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
           activeStreamIds.current[panelIndex] = null;
         } else if (data.done) {
           panel.isStreaming = false;
-          panel.usage = data.usage || null;
+          // Accumulate usage for the conversation
+          if (data.usage) {
+            const prevUsage = panel.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, cost: 0 };
+            const newCost = data.usage.cost ?? 0;
+            panel.usage = {
+              prompt_tokens: prevUsage.prompt_tokens + data.usage.prompt_tokens,
+              completion_tokens: prevUsage.completion_tokens + data.usage.completion_tokens,
+              total_tokens: prevUsage.total_tokens + data.usage.total_tokens,
+              cost: (prevUsage.cost ?? 0) + newCost,
+            };
+          }
           panel.latency_ms = data.latency_ms || null;
           if (data.fullContent) {
             panel.messages = [...panel.messages, { role: 'assistant', content: data.fullContent }];
@@ -320,6 +361,7 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
       const modelIds = panels.map((p) => p.modelId).filter(Boolean) as string[];
       await window.api.conversations.create(convId, null, modelIds);
       setConversationId(convId);
+      onConversationChanged?.(convId);
 
       // Set up title generation for new conversation
       firstUserMessage.current = prompt;
@@ -339,13 +381,13 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
     const userMessage: ChatMessage = { role: 'user', content: prompt };
 
     // Update all panels with user message and start streaming
+    // Keep usage to accumulate across conversation, reset latency for new message
     setPanels((prev) =>
       prev.map((panel) => ({
         ...panel,
         messages: panel.modelId ? [...panel.messages, userMessage] : panel.messages,
         isStreaming: panel.modelId ? true : false,
         currentResponse: '',
-        usage: null,
         latency_ms: null,
         error: null,
       }))
@@ -375,25 +417,6 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
     });
     setPanels((prev) => prev.map((p) => ({ ...p, isStreaming: false })));
     activeStreamIds.current = [null, null, null];
-  };
-
-  const handleClearConversation = () => {
-    setPanels((prev) =>
-      prev.map((panel) => ({
-        ...panel,
-        messages: [],
-        currentResponse: '',
-        usage: null,
-        latency_ms: null,
-        error: null,
-      }))
-    );
-    setConversationId(null);
-    // Reset title generation state
-    titleGenerated.current = false;
-    firstUserMessage.current = null;
-    expectedStreams.current = 0;
-    completedStreams.current = 0;
   };
 
   const handleLoadPreset = (modelIds: string[]) => {
@@ -429,20 +452,21 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
             <Save size={16} />
             <span>Presets</span>
           </button>
-          <button onClick={onViewHistory} className="toolbar-button" title="View History">
-            <History size={16} />
-            <span>History</span>
-          </button>
           <button onClick={onViewLogs} className="toolbar-button" title="View API Logs">
             <BarChart3 size={16} />
             <span>Logs</span>
           </button>
         </div>
         <div className="toolbar-right">
-          {hasAnyMessages && (
-            <button onClick={handleClearConversation} className="toolbar-button danger" disabled={isAnyStreaming}>
-              <Trash2 size={16} />
-              <span>Clear</span>
+          {conversationId && hasAnyMessages && (
+            <button
+              onClick={() => setShowShareDialog(true)}
+              className="toolbar-button"
+              title="Share Conversation"
+              disabled={isAnyStreaming}
+            >
+              <Share2 size={16} />
+              <span>Share</span>
             </button>
           )}
         </div>
@@ -509,6 +533,15 @@ export function ModelComparison({ onViewHistory, onViewLogs, loadedConversation,
           models={models}
           onLoadPreset={handleLoadPreset}
           onClose={() => setShowPresetManager(false)}
+        />
+      )}
+
+      {/* Share Dialog */}
+      {showShareDialog && conversationId && (
+        <ShareDialog
+          conversationId={conversationId}
+          conversationTitle={null}
+          onClose={() => setShowShareDialog(false)}
         />
       )}
     </div>
