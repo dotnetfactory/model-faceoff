@@ -71,42 +71,72 @@ export interface CompletionResult {
 const OPENROUTER_API_BASE = 'https://openrouter.ai/api/v1';
 
 /**
- * Fetch all available models from OpenRouter
+ * Check if a model is free (has :free suffix or zero pricing)
  */
-export async function fetchModels(apiKey: string): Promise<OpenRouterModel[]> {
-  const response = await fetch(`${OPENROUTER_API_BASE}/models`, {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://www.modelfaceoff.com',
-      'X-Title': 'Model Faceoff',
-    },
-  });
+export function isFreeModel(model: OpenRouterModel): boolean {
+  return (
+    model.id.endsWith(':free') ||
+    (parseFloat(model.pricing.prompt) === 0 && parseFloat(model.pricing.completion) === 0)
+  );
+}
+
+/**
+ * Build headers for OpenRouter API requests
+ * API key is optional - free models can be accessed without authentication
+ */
+function buildHeaders(apiKey?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'HTTP-Referer': 'https://www.modelfaceoff.com',
+    'X-Title': 'Model Faceoff',
+  };
+
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  return headers;
+}
+
+/**
+ * Fetch all available models from OpenRouter
+ * If no API key is provided, only free models will be returned
+ */
+export async function fetchModels(apiKey?: string): Promise<OpenRouterModel[]> {
+  const headers = buildHeaders(apiKey);
+  // Remove Content-Type for GET request
+  delete headers['Content-Type'];
+
+  const response = await fetch(`${OPENROUTER_API_BASE}/models`, { headers });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
   }
 
   const data = (await response.json()) as OpenRouterModelsResponse;
-  return data.data;
+  let models = data.data;
+
+  // If no API key, filter to only free models
+  if (!apiKey) {
+    models = models.filter(isFreeModel);
+  }
+
+  return models;
 }
 
 /**
  * Stream a chat completion from OpenRouter
+ * API key is optional for free models
  */
 export async function* streamCompletion(
-  apiKey: string,
+  apiKey: string | undefined,
   model: string,
   messages: ChatMessage[],
   signal?: AbortSignal
 ): AsyncGenerator<StreamChunk> {
   const response = await fetch(`${OPENROUTER_API_BASE}/chat/completions`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://www.modelfaceoff.com',
-      'X-Title': 'Model Faceoff',
-    },
+    headers: buildHeaders(apiKey),
     body: JSON.stringify({
       model,
       messages,
@@ -162,9 +192,10 @@ export async function* streamCompletion(
 
 /**
  * Get a non-streaming completion
+ * API key is optional for free models
  */
 export async function getCompletion(
-  apiKey: string,
+  apiKey: string | undefined,
   model: string,
   messages: ChatMessage[]
 ): Promise<CompletionResult> {
@@ -172,12 +203,7 @@ export async function getCompletion(
 
   const response = await fetch(`${OPENROUTER_API_BASE}/chat/completions`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://www.modelfaceoff.com',
-      'X-Title': 'Model Faceoff',
-    },
+    headers: buildHeaders(apiKey),
     body: JSON.stringify({
       model,
       messages,
