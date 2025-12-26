@@ -77,6 +77,7 @@ interface StreamChunkData {
 const openrouterAPI = {
   getModels: () => ipcRenderer.invoke('openrouter:getModels'),
   clearModelsCache: () => ipcRenderer.invoke('openrouter:clearModelsCache'),
+  getApiKeyStatus: () => ipcRenderer.invoke('openrouter:getApiKeyStatus'),
   startStream: (streamId: string, model: string, messages: ChatMessage[]) =>
     ipcRenderer.invoke('openrouter:startStream', streamId, model, messages),
   stopStream: (streamId: string) => ipcRenderer.invoke('openrouter:stopStream', streamId),

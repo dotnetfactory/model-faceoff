@@ -9,14 +9,15 @@ import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { getDatabase, closeDatabase, getCurrentDatabasePath } from '../database/connection';
 import { getDatabaseInfo, migrateDatabase, getDefaultDatabasePath, saveDatabaseConfig } from '../database/config';
-import { fetchModels, streamCompletion, ChatMessage, OpenRouterModel } from '../services/openrouter';
+import { fetchModels, streamCompletion, isFreeModel, ChatMessage, OpenRouterModel } from '../services/openrouter';
 
 // Store for active stream abort controllers
 const activeStreams = new Map<string, AbortController>();
 
-// Cache for models
+// Cache for models (separate caches for free mode vs authenticated mode)
 let modelsCache: OpenRouterModel[] | null = null;
 let modelsCacheTime = 0;
+let modelsCacheIsFreeMode = false;
 const MODELS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -219,22 +220,24 @@ export function registerIPCHandlers(): void {
       const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('openrouter_api_key') as
         | { value: string }
         | undefined;
-      const apiKey = row?.value;
+      const apiKey = row?.value || undefined;
+      const isFreeMode = !apiKey;
 
-      if (!apiKey) {
-        return { success: false, error: { code: 'NO_API_KEY', message: 'OpenRouter API key not configured' } };
-      }
-
-      // Check cache
-      if (modelsCache && Date.now() - modelsCacheTime < MODELS_CACHE_DURATION) {
-        return { success: true, data: modelsCache };
+      // Check cache (invalidate if mode changed)
+      if (
+        modelsCache &&
+        Date.now() - modelsCacheTime < MODELS_CACHE_DURATION &&
+        modelsCacheIsFreeMode === isFreeMode
+      ) {
+        return { success: true, data: modelsCache, isFreeMode };
       }
 
       const models = await fetchModels(apiKey);
       modelsCache = models;
       modelsCacheTime = Date.now();
+      modelsCacheIsFreeMode = isFreeMode;
 
-      return { success: true, data: models };
+      return { success: true, data: models, isFreeMode };
     } catch (error) {
       return { success: false, error: { code: 'FETCH_MODELS_ERROR', message: String(error) } };
     }
@@ -246,6 +249,25 @@ export function registerIPCHandlers(): void {
     return { success: true };
   });
 
+  ipcMain.handle('openrouter:getApiKeyStatus', async () => {
+    try {
+      const db = getDatabase();
+      const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('openrouter_api_key') as
+        | { value: string }
+        | undefined;
+      const hasApiKey = !!row?.value;
+      return {
+        success: true,
+        data: {
+          hasApiKey,
+          isFreeMode: !hasApiKey,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: { code: 'GET_STATUS_ERROR', message: String(error) } };
+    }
+  });
+
   ipcMain.handle(
     'openrouter:startStream',
     async (event, streamId: string, model: string, messages: ChatMessage[]) => {
@@ -254,10 +276,18 @@ export function registerIPCHandlers(): void {
         const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('openrouter_api_key') as
           | { value: string }
           | undefined;
-        const apiKey = row?.value;
+        const apiKey = row?.value || undefined;
+        const isFreeMode = !apiKey;
 
-        if (!apiKey) {
-          return { success: false, error: { code: 'NO_API_KEY', message: 'OpenRouter API key not configured' } };
+        // In free mode, only allow free models
+        if (isFreeMode && !model.endsWith(':free')) {
+          return {
+            success: false,
+            error: {
+              code: 'FREE_MODE_RESTRICTION',
+              message: 'This model requires an API key. Please add your OpenRouter API key in Settings to use paid models.',
+            },
+          };
         }
 
         const abortController = new AbortController();
@@ -335,7 +365,7 @@ export function registerIPCHandlers(): void {
     return { success: true };
   });
 
-  // Free model for generating conversation titles
+  // Free model for generating conversation titles (works without API key)
   const TITLE_GENERATION_MODEL = 'meta-llama/llama-3.2-3b-instruct:free';
 
   ipcMain.handle('openrouter:generateTitle', async (_, userMessage: string) => {
@@ -344,11 +374,8 @@ export function registerIPCHandlers(): void {
       const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('openrouter_api_key') as
         | { value: string }
         | undefined;
-      const apiKey = row?.value;
-
-      if (!apiKey) {
-        return { success: false, error: { code: 'NO_API_KEY', message: 'OpenRouter API key not configured' } };
-      }
+      // API key is optional - title generation uses a free model
+      const apiKey = row?.value || undefined;
 
       const { getCompletion } = await import('../services/openrouter');
       const result = await getCompletion(apiKey, TITLE_GENERATION_MODEL, [

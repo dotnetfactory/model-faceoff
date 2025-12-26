@@ -24,6 +24,7 @@ export function Settings({ onClose }: SettingsProps) {
   const [apiKeyStatus, setApiKeyStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   const [testingApiKey, setTestingApiKey] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [isFreeMode, setIsFreeMode] = useState(true);
 
   // Database location state
   const [dbInfo, setDbInfo] = useState<DatabaseInfo | null>(null);
@@ -40,6 +41,12 @@ export function Settings({ onClose }: SettingsProps) {
       const apiKeyResult = await window.api.settings.get('openrouter_api_key');
       if (apiKeyResult.success && apiKeyResult.data) {
         setApiKey(apiKeyResult.data);
+      }
+
+      // Check API key status (free mode vs own key)
+      const statusResult = await window.api.openrouter.getApiKeyStatus();
+      if (statusResult.success && statusResult.data) {
+        setIsFreeMode(statusResult.data.isFreeMode);
       }
 
       // Load database info
@@ -66,9 +73,11 @@ export function Settings({ onClose }: SettingsProps) {
       const result = await window.api.settings.set('openrouter_api_key', apiKey);
       if (result.success) {
         setApiKeyStatus('saved');
+        // Update free mode status
+        setIsFreeMode(!apiKey.trim());
         // Clear models cache so they reload with new key
         await window.api.openrouter.clearModelsCache();
-        toast.success('API key saved');
+        toast.success(apiKey.trim() ? 'API key saved' : 'API key cleared - using free models');
         setTimeout(() => setApiKeyStatus('idle'), 2000);
       } else {
         setApiKeyStatus('error');
@@ -220,21 +229,41 @@ export function Settings({ onClose }: SettingsProps) {
           {activeTab === 'api' && (
             <section className="settings-section">
               <h3>OpenRouter API</h3>
-              <p className="section-description">
-                Configure your OpenRouter API key to access AI models. Get your API key from{' '}
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.api.shell.openExternal('https://openrouter.ai/keys');
-                  }}
-                >
-                  openrouter.ai/keys
-                </a>
-              </p>
+
+              {isFreeMode ? (
+                <div className="free-mode-banner">
+                  <div className="free-mode-status">
+                    <span className="status-badge free">Free Mode Active</span>
+                    <p>You're using free AI models without an API key.</p>
+                  </div>
+                  <div className="free-mode-info">
+                    <p>
+                      <strong>Want access to more models?</strong> Add your own OpenRouter API key to unlock
+                      hundreds of additional models including GPT-4, Claude, and more.
+                    </p>
+                    <p className="get-key-link">
+                      Get your API key from{' '}
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.api.shell.openExternal('https://openrouter.ai/keys');
+                        }}
+                      >
+                        openrouter.ai/keys
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="api-key-active-banner">
+                  <span className="status-badge active">API Key Active</span>
+                  <p>You have access to all available models.</p>
+                </div>
+              )}
 
               <div className="api-key-section">
-                <label htmlFor="api-key">API Key</label>
+                <label htmlFor="api-key">API Key {isFreeMode && <span style={{ fontWeight: 'normal', color: 'var(--color-text-muted)' }}>(optional)</span>}</label>
                 <div className="api-key-input-wrapper">
                   <input
                     id="api-key"
@@ -300,7 +329,7 @@ export function Settings({ onClose }: SettingsProps) {
                 <h4>About OpenRouter</h4>
                 <p>
                   OpenRouter provides a unified API to access models from OpenAI, Anthropic, Google, Meta, and many
-                  other providers. You only need one API key to compare all available models.
+                  other providers. {isFreeMode ? 'Free models are available without an API key.' : 'You only need one API key to compare all available models.'}
                 </p>
               </div>
             </section>

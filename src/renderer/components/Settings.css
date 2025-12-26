@@ -337,3 +337,87 @@
 .section-description a:hover {
   text-decoration: underline;
 }
+
+/* Free Mode Banner */
+.free-mode-banner {
+  padding: var(--space-md);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.free-mode-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.free-mode-status p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.status-badge.free {
+  background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+  color: white;
+}
+
+.status-badge.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.free-mode-info p {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-xs) 0;
+  line-height: 1.5;
+}
+
+.free-mode-info p:last-child {
+  margin-bottom: 0;
+}
+
+.free-mode-info strong {
+  color: var(--color-text);
+}
+
+.get-key-link a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.get-key-link a:hover {
+  text-decoration: underline;
+}
+
+/* API Key Active Banner */
+.api-key-active-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.api-key-active-banner p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
