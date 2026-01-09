@@ -154,3 +154,6 @@ The config is injected at build time via Vite's `define` and available as `__APP
 - `src/database/schema.ts` - Database table definitions
 - `src/renderer/App.tsx` - Main React component
 - `forge.config.ts` - Build and packaging configuration
+
+
+The web app is located at ../model-faceoff-web
