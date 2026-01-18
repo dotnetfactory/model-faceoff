@@ -15,3 +15,4 @@ out/
 certs/Certificates.p12
 certs/CertificateSigningRequest.certSigningRequest
 certs/developerID_application.cer
+.worktrees/
