@@ -154,6 +154,12 @@ const shareAPI = {
   getHistory: (conversationId: string) => ipcRenderer.invoke('share:getHistory', conversationId),
 };
 
+// Activation API (email verification)
+const activationAPI = {
+  start: (email: string) => ipcRenderer.invoke('activation:start', { email }),
+  confirm: (email: string, code: string) => ipcRenderer.invoke('activation:confirm', { email, code }),
+};
+
 // Expose APIs to renderer
 contextBridge.exposeInMainWorld('api', {
   settings: settingsAPI,
@@ -167,4 +173,5 @@ contextBridge.exposeInMainWorld('api', {
   messages: messagesAPI,
   apiLogs: apiLogsAPI,
   share: shareAPI,
+  activation: activationAPI,
 });

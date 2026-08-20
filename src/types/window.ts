@@ -324,6 +324,14 @@ export interface ShareAPI {
 }
 
 /**
+ * Email activation API
+ */
+export interface ActivationAPI {
+  start: (email: string) => Promise<IPCResponse<{ alreadyVerified: boolean }>>;
+  confirm: (email: string, code: string) => Promise<IPCResponse<void>>;
+}
+
+/**
  * Main window API interface
  */
 export interface WindowAPI {
@@ -338,6 +346,7 @@ export interface WindowAPI {
   messages: MessagesAPI;
   apiLogs: ApiLogsAPI;
   share: ShareAPI;
+  activation: ActivationAPI;
 }
 
 declare global {

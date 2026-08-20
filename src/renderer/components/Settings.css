@@ -136,6 +136,42 @@
   margin-bottom: var(--space-sm);
 }
 
+/* Email verification row */
+.email-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.email-row-info label {
+  margin-bottom: var(--space-xs);
+}
+
+.email-row-address {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  word-break: break-all;
+}
+
+.email-row-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.email-row-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-success);
+  white-space: nowrap;
+}
+
 .about-links {
   display: flex;
   gap: var(--space-sm);

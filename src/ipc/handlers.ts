@@ -11,6 +11,11 @@ import { getDatabase, closeDatabase, getCurrentDatabasePath } from '../database/
 import { getDatabaseInfo, migrateDatabase, getDefaultDatabasePath, saveDatabaseConfig } from '../database/config';
 import { fetchModels, streamCompletion, ChatMessage, OpenRouterModel } from '../services/openrouter';
 
+// Base URL for the web app API (shares, activation).
+// Use localhost in development, production URL in packaged app.
+// app.isPackaged is true when running from a built .app/.exe, false during npm run dev
+const API_BASE_URL = app.isPackaged ? 'https://www.modelfaceoff.com' : 'http://localhost:3000';
+
 // Store for active stream abort controllers
 const activeStreams = new Map<string, AbortController>();
 
@@ -18,6 +23,86 @@ const activeStreams = new Map<string, AbortController>();
 let modelsCache: OpenRouterModel[] | null = null;
 let modelsCacheTime = 0;
 const MODELS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// ============= Email activation helpers =============
+
+interface ActivationResponse {
+  ok: boolean;
+  alreadyVerified?: boolean;
+  error?: string;
+  retryAfter?: number;
+}
+
+// Shown when the request never reached the server (offline, DNS, timeout)
+const OFFLINE_MESSAGE = 'Could not reach the verification service. Check your connection and try again.';
+
+// Server error strings mapped to something a user can act on
+const ACTIVATION_ERROR_MESSAGES: Record<string, string> = {
+  invalid_email: 'That email address does not look valid.',
+  rate_limited: 'Too many requests. Please wait a moment and try again.',
+  send_failed: 'We could not send the email. Please try again.',
+  invalid_code: 'That code is not correct.',
+  too_many_attempts: 'Too many incorrect codes. Request a new one.',
+  expired: 'That code has expired. Request a new one.',
+  unavailable: 'Verification is temporarily unavailable. Please try again later.',
+  unauthorized: 'Verification is temporarily unavailable. Please try again later.',
+};
+
+/**
+ * Stable per-install identifier, generated once and kept in the settings table.
+ */
+function getMachineId(): string {
+  const db = getDatabase();
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('machine_id') as
+    | { value: string }
+    | undefined;
+  if (row?.value) {
+    return row.value;
+  }
+
+  const machineId = crypto.randomUUID();
+  const now = Date.now();
+  db.prepare(
+    `
+    INSERT INTO settings (key, value, created_at, updated_at) VALUES (?, ?, ?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+  `
+  ).run('machine_id', machineId, now, now);
+  return machineId;
+}
+
+/**
+ * POST to an activation endpoint with the identifying fields both routes expect.
+ */
+async function postActivation(path: string, body: Record<string, string>): Promise<ActivationResponse> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...body,
+      product: 'model-faceoff',
+      version: app.getVersion(),
+      platform: `${process.platform}-${process.arch}`,
+      machineId: getMachineId(),
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+  // A proxy or a 404 answers with HTML, not JSON - do not leak a parser error to the user
+  return (await response.json().catch(() => ({ ok: false, error: 'unavailable' }))) as ActivationResponse;
+}
+
+function activationError(result: ActivationResponse): { code: string; message: string } {
+  const code = result.error || 'ACTIVATION_ERROR';
+  if (code === 'rate_limited' && result.retryAfter) {
+    // The hourly limits return 3600, and "please wait 3600s" reads badly
+    const wait =
+      result.retryAfter >= 120
+        ? `${Math.ceil(result.retryAfter / 60)} minutes`
+        : `${result.retryAfter} seconds`;
+    return { code, message: `Please wait ${wait} before requesting another code.` };
+  }
+  return { code, message: ACTIVATION_ERROR_MESSAGES[code] || 'Something went wrong. Please try again.' };
+}
 
 /**
  * Register all IPC handlers
@@ -642,12 +727,6 @@ export function registerIPCHandlers(): void {
 
   // ============= Shares =============
 
-  // Use localhost in development, production URL in packaged app
-  // app.isPackaged is true when running from a built .app/.exe, false during npm run dev
-  const SHARE_API_URL = app.isPackaged
-    ? 'https://www.modelfaceoff.com'
-    : 'http://localhost:3000';
-
   ipcMain.handle('share:createShare', async (_, conversationId: string) => {
     try {
       const db = getDatabase();
@@ -706,7 +785,7 @@ export function registerIPCHandlers(): void {
       };
 
       // Step 1: Get token
-      const tokenResponse = await fetch(`${SHARE_API_URL}/api/share/token`);
+      const tokenResponse = await fetch(`${API_BASE_URL}/api/share/token`);
       const tokenResult = (await tokenResponse.json()) as {
         success: boolean;
         token?: string;
@@ -724,7 +803,7 @@ export function registerIPCHandlers(): void {
       }
 
       // Step 2: Create share with token
-      const shareResponse = await fetch(`${SHARE_API_URL}/api/share`, {
+      const shareResponse = await fetch(`${API_BASE_URL}/api/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -751,7 +830,7 @@ export function registerIPCHandlers(): void {
       }
 
       // Construct the share URL locally (uses localhost in dev, production URL in packaged app)
-      const shareUrl = `${SHARE_API_URL}/s/${shareResult.shareCode}`;
+      const shareUrl = `${API_BASE_URL}/s/${shareResult.shareCode}`;
 
       // Step 3: Save share to local database
       const shareId = crypto.randomUUID();
@@ -793,6 +872,34 @@ export function registerIPCHandlers(): void {
       return { success: true, data: shares };
     } catch (error) {
       return { success: false, error: { code: 'GET_SHARES_ERROR', message: String(error) } };
+    }
+  });
+
+  // ============= Email activation =============
+
+  ipcMain.handle('activation:start', async (_, { email }: { email: string }) => {
+    try {
+      const result = await postActivation('/api/activate/start', { email });
+      if (!result.ok) {
+        return { success: false, error: activationError(result) };
+      }
+      return { success: true, data: { alreadyVerified: result.alreadyVerified === true } };
+    } catch (error) {
+      console.error('Activation start error:', error);
+      return { success: false, error: { code: 'ACTIVATION_START_ERROR', message: OFFLINE_MESSAGE } };
+    }
+  });
+
+  ipcMain.handle('activation:confirm', async (_, { email, code }: { email: string; code: string }) => {
+    try {
+      const result = await postActivation('/api/activate/confirm', { email, code });
+      if (!result.ok) {
+        return { success: false, error: activationError(result) };
+      }
+      return { success: true };
+    } catch (error) {
+      console.error('Activation confirm error:', error);
+      return { success: false, error: { code: 'ACTIVATION_CONFIRM_ERROR', message: OFFLINE_MESSAGE } };
     }
   });
 

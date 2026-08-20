@@ -1,0 +1,88 @@
+/**
+ * EmailGate Styles
+ */
+
+.email-gate-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.email-gate-panel {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-xl);
+  background-color: var(--color-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.email-gate-title {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-sm);
+}
+
+.email-gate-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-sm);
+}
+
+.email-gate-note {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin-bottom: var(--space-lg);
+}
+
+.email-gate-form label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.email-gate-code-input {
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  letter-spacing: 0.4em;
+  text-align: center;
+}
+
+.email-gate-error {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background-color: rgba(248, 113, 113, 0.15);
+  color: #dc2626;
+  font-size: var(--text-sm);
+}
+
+.email-gate-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.email-gate-resend {
+  margin-top: var(--space-md);
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+}
+
+.email-gate-resend:hover:not(:disabled) {
+  background: transparent;
+  text-decoration: underline;
+}
+
+.email-gate-resend:disabled {
+  color: var(--color-text-muted);
+}

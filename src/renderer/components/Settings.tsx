@@ -12,9 +12,11 @@ import { DatabaseInfo } from '../../types/window';
 
 interface SettingsProps {
   onClose: () => void;
+  verifiedEmail: string | null;
+  onVerifyEmail: () => void;
 }
 
-export function Settings({ onClose }: SettingsProps) {
+export function Settings({ onClose, verifiedEmail, onVerifyEmail }: SettingsProps) {
   const [activeTab, setActiveTab] = useState<'api' | 'storage' | 'about'>('api');
 
   // API key state
@@ -382,6 +384,28 @@ export function Settings({ onClose }: SettingsProps) {
                 markdown rendering, and usage tracking.
               </p>
               <p className="version-text">Version {appVersion}</p>
+
+              <div className="email-row">
+                <div className="email-row-info">
+                  <label>Email</label>
+                  {verifiedEmail ? (
+                    <span className="email-row-address">{verifiedEmail}</span>
+                  ) : (
+                    <span className="email-row-hint">Get notified when something big ships.</span>
+                  )}
+                </div>
+                {verifiedEmail ? (
+                  <span className="email-row-verified">
+                    <Check size={14} />
+                    Verified
+                  </span>
+                ) : (
+                  <button className="btn-secondary btn-small" onClick={onVerifyEmail}>
+                    Verify email
+                  </button>
+                )}
+              </div>
+
               <div className="about-links">
                 <a
                   href="#"
