@@ -17,7 +17,11 @@ jobs:
           - os: macos-15-intel
             platform: darwin
             arch: x64
-          - os: windows-latest
+          # Pinned, not windows-latest. windows-latest now resolves to the VS2025
+          # image, and the node-gyp bundled with @electron/rebuild cannot find it
+          # ("Could not find any Visual Studio installation to use"), so the
+          # better-sqlite3 native rebuild fails and no Windows artifact is produced.
+          - os: windows-2022
             platform: win32
             arch: x64
           - os: ubuntu-latest
