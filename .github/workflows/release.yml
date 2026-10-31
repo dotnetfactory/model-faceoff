@@ -25,6 +25,22 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # The Forge publisher picks its release from package.json ("v" + version), not from the
+      # pushed tag, and with force: true it replaces same-named assets on whatever release that
+      # is. The gh steps below use the tag. Refuse to run unless the two agree, so a mis-tagged
+      # commit can never make the matrix jobs rewrite an already-published release.
+      - name: Check the tag matches package.json
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::tag $TAG does not match package.json version $VERSION; the publisher would target v$VERSION"
+            exit 1
+          fi
+
       - name: Ensure draft release exists
         env:
           # gh CLI auth only. This GH_TOKEN never reaches npm or forge.config.ts: the packaging
@@ -98,6 +114,26 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Guards this leg on its own: a re-run of one matrix job after finalize has published
+      # would otherwise force-replace live assets (prepare does not re-run). The release must
+      # still be a draft and the tag must still match package.json. gh CLI auth only.
+      - name: Refuse to publish into a live release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::tag $TAG does not match package.json version $VERSION"
+            exit 1
+          fi
+          IS_DRAFT="$(gh release view "$TAG" --repo "$RELEASES_REPO" --json isDraft --jq .isDraft)"
+          if [ "$IS_DRAFT" != "true" ]; then
+            echo "::error::$TAG in $RELEASES_REPO is not a draft; refusing to publish into a live release"
+            exit 1
+          fi
 
       # macOS: Import signing certificate
       - name: Import macOS signing certificate
