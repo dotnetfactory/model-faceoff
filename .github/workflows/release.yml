@@ -33,13 +33,29 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          if STATE=$(gh release view "$TAG" --repo "$RELEASES_REPO" --json isDraft --jq .isDraft 2>/dev/null); then
+          set +e
+          STATE=$(gh release view "$TAG" --repo "$RELEASES_REPO" --json isDraft --jq .isDraft 2>view-error.txt)
+          STATUS=$?
+          set -e
+          if [ "$STATUS" -eq 0 ]; then
             if [ "$STATE" != "true" ]; then
               echo "::error::$TAG is already published in $RELEASES_REPO; refusing to modify a live release. Delete it or tag a new version."
               exit 1
             fi
             echo "Draft $TAG already exists; the matrix jobs will append to it."
             exit 0
+          elif ! grep -qi 'release not found' view-error.txt; then
+            # Anything but a clean "not found" (auth, rate limit, outage) must not fall through to
+            # `gh release create`, which would happily add a second draft for the same tag.
+            cat view-error.txt
+            echo "::error::could not look up $TAG in $RELEASES_REPO"
+            exit 1
+          fi
+          # The Forge publisher finds the draft by scanning the first 100 releases; fail now rather
+          # than let four matrix jobs each create their own draft once the repo outgrows that.
+          if [ "$(gh api "repos/$RELEASES_REPO/releases?per_page=100" --jq length)" -ge 100 ]; then
+            echo "::error::$RELEASES_REPO has 100+ releases; @electron-forge/publisher-github only searches the first 100. Prune old releases first."
+            exit 1
           fi
           # The tag already points at this repo's commit, so "latest release" ordering (by the tagged
           # commit's date) advances with every version on its own.
@@ -162,9 +178,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # gh CLI auth only
         run: |
-          npx tsx scripts/verify-release-manifests.ts --tag "$TAG" --manifests gate/manifests --list-referenced |
+          set -o pipefail
+          # A missing asset is reported by the verify step below, with everything else that is
+          # wrong, so a failed download must not end this step early.
+          npx tsx scripts/verify-release-manifests.ts --manifests gate/manifests --list-referenced |
             while read -r asset; do
-              gh release download "$TAG" --repo "$RELEASES_REPO" --dir gate/assets --pattern "$asset"
+              gh release download "$TAG" --repo "$RELEASES_REPO" --dir gate/assets --pattern "$asset" ||
+                echo "::warning::could not download $asset; the verify step will report it"
             done
 
       - name: Verify the manifests against the tag and the draft's assets
