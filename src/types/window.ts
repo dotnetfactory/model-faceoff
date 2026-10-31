@@ -133,11 +133,28 @@ export interface StreamChunkData {
 }
 
 /**
+ * API Key Status
+ */
+export interface ApiKeyStatus {
+  hasApiKey: boolean;
+  isFreeMode: boolean;
+}
+
+/**
+ * Get Models Response (includes isFreeMode flag)
+ */
+export interface GetModelsResponse {
+  data?: OpenRouterModel[];
+  isFreeMode?: boolean;
+}
+
+/**
  * OpenRouter API
  */
 export interface OpenRouterAPI {
-  getModels: () => Promise<IPCResponse<OpenRouterModel[]>>;
+  getModels: () => Promise<IPCResponse<OpenRouterModel[]> & { isFreeMode?: boolean }>;
   clearModelsCache: () => Promise<IPCResponse<void>>;
+  getApiKeyStatus: () => Promise<IPCResponse<ApiKeyStatus>>;
   startStream: (streamId: string, model: string, messages: ChatMessage[]) => Promise<IPCResponse<{ streamId: string }>>;
   stopStream: (streamId: string) => Promise<IPCResponse<void>>;
   generateTitle: (userMessage: string) => Promise<IPCResponse<string>>;
